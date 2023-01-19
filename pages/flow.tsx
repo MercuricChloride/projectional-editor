@@ -21,6 +21,7 @@ interface Props {
   defaultNodes: any[];
   defaultEdges: any[];
 }
+
 export default function Flow({ defaultNodes, defaultEdges }: Props) {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);

@@ -1,10 +1,11 @@
 import {
   getContract,
   getStateVariables,
+  INode,
   positionNodes,
 } from "@/Helpers/helpers";
 import Flow from "@/pages/flow";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 require("@solidity-parser/parser/dist/index.iife.js");
 
 export default function Editor() {
@@ -23,44 +24,43 @@ export default function Editor() {
     } catch (_) {}
   }, [text]);
 
-  useEffect(() => {
-    const newNodes: any = [];
+  async function onParseUpdate() {
+    // we are using a set to track each contract and it's sub nodes
+    const contracts: Set<INode> = new Set();
 
-    // get all contract definitions
+    // we then are going to get each contract and it's sub nodes
+    // then push it to the set
+    // then after the visitor is all finished, we will position the nodes
+
     try {
       visit(parsed, {
-        ContractDefinition: (node: any) => {
-          // x offset is 200 * number of contracts
-          const xOffset =
-            200 *
-            newNodes.reduce(
-              (acc: any, node: any) => (node.id.includes("-") ? acc + 1 : acc),
-              0
-            );
-
-          const yOffset = (index: number) => 100 * index;
-
+        ContractDefinition: async (node: any) => {
+          // All the nodes that will be added to the graph that are a contract definition or inside a contract definition
           const contractNodes: any = [
             getContract(node),
             ...getStateVariables(node),
           ];
 
-          const positionedNodes = positionNodes(
-            contractNodes,
-            xOffset,
-            yOffset
-          );
-
-          console.log("positionedNodes: ", positionedNodes);
-
-          newNodes.push(...positionedNodes);
+          // Add the contract to the set
+          contracts.add(contractNodes);
         },
       });
     } catch (e) {
       console.error("Something went wrong: ", e);
     }
-    console.log("newNodes: ", newNodes);
-    setNodes(newNodes);
+
+    // Position the nodes
+    const newNodes = await positionNodes(Array.from(contracts));
+
+    // only set the nodes if there are new nodes to set, IE not in the middle of editing
+    if (newNodes.length > 0) {
+      console.log("Setting nodes: ", newNodes);
+      setNodes(newNodes);
+    }
+  }
+
+  useEffect(() => {
+    onParseUpdate();
   }, [parsed]);
 
   return (
