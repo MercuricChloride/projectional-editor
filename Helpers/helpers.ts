@@ -1,5 +1,6 @@
 import { ElkNode } from "elkjs";
 import ELK from "elkjs/lib/elk.bundled.js";
+const elk = new ELK();
 
 // These are helper functions meant to play nice with the visitor pattern
 // I use them to traverse the AST and extract the information I need
@@ -27,9 +28,9 @@ export interface INode {
   height?: number;
 }
 
-const DEFAULT_NODE_WIDTH = 200;
+const DEFAULT_NODE_WIDTH = 300;
 const DEFAULT_NODE_HEIGHT = 200;
-const DEFAULT_GRAPH_TYPE = "rectpacking";
+const DEFAULT_GRAPH_TYPE = "mrtree";
 
 // inputs:
 // contractNode: an object representing a contract node in the AST
@@ -75,22 +76,27 @@ export function getStateVariables(contractNode: any): INode[] {
 // nodes: an array of INodes
 // x: a function that returns a number
 // y: a function that returns a number
-// output: an array of INode objects
-export async function positionNodes(nodes: INode[]): Promise<INode[]> {
-  const elk = new ELK();
-  console.log(nodes)
-
+// output: an array [INode[], edges[]]
+export async function positionNodes(nodes: INode[]): Promise<[INode[], any[]]> {
   //@dev ElkJS requires a root node, so that's why we are following this pattern of creating a root node and adding the other nodes as children
+  // @dev Also ElkJS will not layout things correctly unless you make edges defined
+  const flat = nodes.flat();
+
+  const edges = flat
+  .filter((node: any) => node.id.includes('-')) // filter out the contract nodes
+  .map((node: any, index: number) => {
+    const contractName = node.id.split('-')[0];
+    return {
+      id: index.toString(),
+      sources: [contractName],
+      targets: [node.id],
+    };
+  });
+
   const graph: ElkNode = {
     id: "root",
-    children: nodes.map((contractNode: any) => {
-      const contract = contractNode[0];
-      const children = contractNode.slice(1);
-      return {
-        ...contract,
-        children
-      };
-    }),
+    children: flat,
+    edges: edges,
     width: 10000,
     height: 10000,
   };
@@ -99,34 +105,31 @@ export async function positionNodes(nodes: INode[]): Promise<INode[]> {
 
   const layout = await elk.layout(graph, {
     layoutOptions: {
-      algorithm: 'mrtree',
+     'elk.algorithm': 'mrtree',
     },
   });
 
-  const nodesWithPosition =
-    layout.children
-      ?.map((node: any) => {
-        const { x, y } = node;
-        let children;
-        if (node.children) {
-          children = node.children.map((child: any) => {
-            const { x, y } = child;
-            return {
-              ...child,
-              position: { x, y },
-            };
-          });
-        }
-        return [
-          {
-            ...node,
-            position: { x, y },
-          },
-          ...children,
-        ];
-      })
-      .flat() || [];
-  return nodesWithPosition;
+  const nodesWithPosition = layout.children?.map((node: any) => {
+    const { x, y } = node;
+    console.log('position node',node)
+    const newNode = {
+      ...node,
+      position: { x, y },
+    }
+    console.log('newNode',newNode)
+    return newNode;
+  }) || [];
+
+  const outputEdges = layout.edges?.map((edge: any) => {
+    const { id, sources, targets } = edge;
+    return {
+      id,
+      source: sources[0],
+      target: targets[0],
+    };
+  }) || [];
+
+  return [nodesWithPosition, outputEdges];
 }
 
 interface IVariable {

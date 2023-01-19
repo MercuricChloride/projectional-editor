@@ -50,12 +50,14 @@ export default function Editor() {
     }
 
     // Position the nodes
-    const newNodes = await positionNodes(Array.from(contracts));
+    const [newNodes, newEdges] = await positionNodes(Array.from(contracts));
 
     // only set the nodes if there are new nodes to set, IE not in the middle of editing
     if (newNodes.length > 0) {
-      console.log("Setting nodes: ", newNodes);
+      console.log("Setting nodes and edges: ", newNodes);
+      console.log("Setting nodes and edges: ", newEdges);
       setNodes(newNodes);
+      setEdges(newEdges);
     }
   }
 
