@@ -1,12 +1,19 @@
 import {
   getContract,
   getFunctionDeclarations,
+  getNodeId,
+  getScopeRange,
   getStateVariables,
   INode,
   positionNodes,
+  ScopeRange,
 } from "@/Helpers/helpers";
 import Flow from "@/pages/flow";
-import { ContractDefinition } from "@solidity-parser/parser/dist/src/ast-types";
+import {
+  ContractDefinition,
+  FunctionDefinition,
+  VariableDeclaration,
+} from "@solidity-parser/parser/dist/src/ast-types";
 import { useEffect, useState } from "react";
 require("@solidity-parser/parser/dist/index.iife.js");
 
@@ -47,29 +54,67 @@ contract Test {
 
   async function onParseUpdate() {
     // we are using a set to track each contract and it's sub nodes
-    const contracts: Set<INode> = new Set();
 
-    // we then are going to get each contract and it's sub nodes
-    // then push it to the set
-    // then after the visitor is all finished, we will position the nodes
+    const contracts: INode[] = [];
+
+    const newTestNodes: string[] = [];
+
+    const ranges: ScopeRange[] = [];
 
     try {
       visit(parsed, {
         ContractDefinition: async (node: ContractDefinition) => {
-          // All the nodes that will be added to the graph that are a contract definition or inside a contract definition
-          const contractNodes: any = [
-            getContract(node),
-            ...getStateVariables(node),
-          ];
+          const { range, name } = node;
+          console.log("ContractDefinition: ", node);
 
-          // Add the contract to the set
-          contracts.add(contractNodes);
+          if (!range) {
+            console.error("No range found for node: ", node);
+            return;
+          }
+
+          // Add the range to the list of ranges
+          const nodeScope = getScopeRange(range, name);
+          ranges.push(nodeScope);
+
+          // Add the contract to the new test nodes
+          const nodeID = getNodeId(ranges, nodeScope.start);
+          newTestNodes.push(nodeID);
+        },
+
+        FunctionDefinition: async (node: FunctionDefinition) => {
+          const { range, name } = node;
+          console.log("FunctionDefinition: ", node);
+
+          if (!range) {
+            console.error("No range found for node: ", node);
+            return;
+          }
+
+          // Add the range to the list of ranges
+          const nodeScope = getScopeRange(range, name);
+          ranges.push(nodeScope);
+
+          // Add the contract to the new test nodes
+          const nodeID = getNodeId(ranges, nodeScope.start);
+          newTestNodes.push(nodeID);
+        },
+
+        VariableDeclaration: async (node: VariableDeclaration) => {
+          console.log("VariableDeclaration: ", node);
+          const { range, name } = node;
+
+          const nodeScope = getScopeRange(range, name);
+          ranges.push(nodeScope);
+
+          // Add the contract to the new test nodes
+          const nodeID = getNodeId(ranges, nodeScope.start);
+          newTestNodes.push(nodeID);
         },
       });
     } catch (e) {
       console.error("Something went wrong: ", e);
     }
-
+    console.log("New test nodes: ", newTestNodes);
     // Position the nodes
     const [newNodes, newEdges] = await positionNodes(Array.from(contracts));
 

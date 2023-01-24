@@ -1,6 +1,6 @@
 import { ElkNode } from "elkjs";
 import ELK from "elkjs/lib/elk.bundled.js";
-import { ASTNodeTypeString, Block, ContractDefinition, StateVariableDeclaration } from "solidity-parser-diligence";
+import { ASTNodeTypeString, ContractDefinition } from "solidity-parser-diligence";
 const elk = new ELK();
 
 // These are helper functions meant to play nice with the visitor pattern
@@ -252,4 +252,37 @@ export function generateId(scope: string[]) {
       return acc + "-" + item
     }
   }, '');
+}
+ 
+export interface ScopeRange {
+  start: number;
+  end: number;
+  name: string;
+}
+
+export function getScopeRange(range: any, name:string | null): ScopeRange {
+  const [start, end] = range;
+  if(name === null) throw new Error("Unnamed variable or function");
+  return {
+      start,
+      end,
+      name,
+    };
+}
+
+// @notice A function to get the scope of a node and store it in the ID. This is used to determine the scope of a node when we are positioning the nodes and drawing the edges.
+export function getNodeId(ranges: ScopeRange[], target: number) {
+  return ranges
+  .filter((range: any) => {
+    const { start, end } = range;
+    return target >= start && target <= end;
+  }) // Filter out all the non matching scopes this should never be empty
+  .map((range: any) => { return range.name }) // map the scope names
+  .reduce((acc, item, index) => {
+    if(index === 0) {
+      return item // this is for just contracts
+    } else {
+      return acc + "-" + item
+    }
+  } , ''); // reduce the array to a string for the ID
 }
