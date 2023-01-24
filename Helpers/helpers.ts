@@ -1,5 +1,6 @@
 import { ElkNode } from "elkjs";
 import ELK from "elkjs/lib/elk.bundled.js";
+import { ASTNodeTypeString, Block, ContractDefinition, StateVariableDeclaration } from "solidity-parser-diligence";
 const elk = new ELK();
 
 // These are helper functions meant to play nice with the visitor pattern
@@ -28,20 +29,80 @@ export interface INode {
   height?: number;
 }
 
+interface IVariable {
+  name: string;
+  visibility: string;
+  typeName: {
+    name: string;
+  };
+}
+
 const DEFAULT_NODE_WIDTH = 300;
 const DEFAULT_NODE_HEIGHT = 200;
 const DEFAULT_GRAPH_TYPE = "mrtree";
+
+
+// Maybe we should just create a function which returns the correct object to be passed into the visitor that already operates on the correct types
+
+// @param type
+// This function is going to be used when we are iterating over the AST and extract information from the nodes
+// The benefit for this approach is that it hides the complexity of traversing the AST and extracting information. Because we just call a single function for every node in the AST
+export function contractToType(type: ASTNodeTypeString, contractNode: ContractDefinition): INode[] {
+  const contractName = contractNode.name
+
+  switch(type) {
+    case "FunctionDefinition":
+      return contractNode.subNodes
+        .filter((subNode: any) => subNode.type === "FunctionDefinition")
+        .flatMap(({ variables }: any) =>
+          variables.map((variable: any) => {
+            return {
+              id: generateId([contractName, variable]),
+              position: { x: 0, y: 0 },
+              loc: variable.loc,
+              data: {
+                label: displayVariable(variable),
+              },
+              width: DEFAULT_NODE_WIDTH /2,
+              height: DEFAULT_NODE_HEIGHT /2 ,
+            };
+          })
+        );
+
+    case "StateVariableDeclaration":
+      return contractNode.subNodes
+        .filter((subNode: any) => subNode.type === "StateVariableDeclaration")
+        .flatMap(({ variables }: any) =>
+          variables.map((variable: any) => {
+            return {
+              id: generateId([contractName, variable]),
+              position: { x: 0, y: 0 },
+              loc: variable.loc,
+              data: {
+                label: displayVariable(variable),
+              },
+              width: DEFAULT_NODE_WIDTH /2,
+              height: DEFAULT_NODE_HEIGHT /2 ,
+            };
+          })
+        );
+
+    default:
+      console.error("Invalid type");
+      return [] as INode[];
+  }
+}
 
 // inputs:
 // contractNode: an object representing a contract node in the AST
 // output: an INode object with no real position
 export function getContract(contractNode: any): INode {
   return {
-    id: generateId(contractNode.name),
+    id: generateId([contractNode.name]),
     position: { x: 0, y: 0 },
     loc: contractNode.loc,
     data: {
-      label: generateId(contractNode.name),
+      label: generateId([contractNode.name]),
     },
     width: DEFAULT_NODE_WIDTH,
     height: DEFAULT_NODE_HEIGHT,
@@ -58,8 +119,36 @@ export function getStateVariables(contractNode: any): INode[] {
     .filter((subNode: any) => subNode.type === "StateVariableDeclaration")
     .flatMap(({ variables }: any) =>
       variables.map((variable: any) => {
+        console.log('variable', variable);
         return {
-          id: generateId(contractName, variable),
+          id: generateId([contractName, variable]),
+          position: { x: 0, y: 0 },
+          loc: variable.loc,
+          data: {
+            label: displayVariable(variable),
+          },
+          width: DEFAULT_NODE_WIDTH /2,
+          height: DEFAULT_NODE_HEIGHT /2 ,
+        };
+      })
+    );
+}
+
+// export function codeBlockToLocalVariables(block: Block): INode[] {
+//   return block.statements.filter((item) => item.type === "VariableDeclarationStatement")
+//   .map((variable) => {
+
+//   })
+// }
+export function getFunctionDeclarations(contractNode: any): INode[] {
+  const contractName = contractNode.name;
+
+  return contractNode.subNodes
+    .filter((subNode: any) => subNode.type === "FunctionDefinition")
+    .flatMap(({ variables }: any) =>
+      variables.map((variable: any) => {
+        return {
+          id: generateId([contractName, variable]),
           position: { x: 0, y: 0 },
           loc: variable.loc,
           data: {
@@ -86,10 +175,14 @@ export async function positionNodes(nodes: INode[]): Promise<[INode[], any[]]> {
   .filter((node: any) => node.id.includes('-')) // filter out the contract nodes
   .map((node: any, index: number) => {
     const contractName = node.id.split('-')[0];
+    const sources = [contractName]
+    const targets = [node.id]
     return {
       id: index.toString(),
       sources: [contractName],
-      targets: [node.id],
+      source: contractName,
+      targets: [node.id], // we are using the key targets because thats what react flow uses
+      target: node.id, // we are using the key target because thats what react flow uses
     };
   });
 
@@ -105,7 +198,7 @@ export async function positionNodes(nodes: INode[]): Promise<[INode[], any[]]> {
 
   const layout = await elk.layout(graph, {
     layoutOptions: {
-     'elk.algorithm': 'mrtree',
+     'elk.algorithm': DEFAULT_GRAPH_TYPE,
     },
   });
 
@@ -132,14 +225,6 @@ export async function positionNodes(nodes: INode[]): Promise<[INode[], any[]]> {
   return [nodesWithPosition, outputEdges];
 }
 
-interface IVariable {
-  name: string;
-  visibility: string;
-  typeName: {
-    name: string;
-  };
-}
-
 export function displayVariable(variable: IVariable) {
   const {
     name,
@@ -150,14 +235,21 @@ export function displayVariable(variable: IVariable) {
    ${name}`;
 }
 
-// the only thing that shouldn't have a type is a contract
-export function generateId(contractName: string, variable?: IVariable) {
-  if (!variable) return contractName;
-  const {
-    name,
-    typeName: { name: type },
-  } = variable;
-  if (!name || !type)
-    console.error("variable is missing a name or type", variable);
-  return `${contractName}-${type}-${name}`;
+// @notice A function to define the ID for a node. This ID setup is to make it easy to define the scope of things when we position the nodes and draw the edges.
+// @param scopeArr, an array of strings listing the scope from largest -> smallest
+// @example: the scope of a local variable called test within a function called bar on a contract called Foo.
+// ['Foo', 'bar', 'test']  -> 'Foo-bar-test'
+export function generateId(scope: string[]) {
+  if(scope.length < 1) {
+    console.error(scope);
+    throw new Error("Invalid scope length for generateId()");
+  }
+
+  return scope.reduce((acc, item, index) => {
+    if(index === 0) {
+      return item // this is for just contracts
+    } else {
+      return acc + "-" + item
+    }
+  }, '');
 }

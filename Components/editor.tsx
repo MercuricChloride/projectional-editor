@@ -1,10 +1,12 @@
 import {
   getContract,
+  getFunctionDeclarations,
   getStateVariables,
   INode,
   positionNodes,
 } from "@/Helpers/helpers";
 import Flow from "@/pages/flow";
+import { ContractDefinition } from "@solidity-parser/parser/dist/src/ast-types";
 import { useEffect, useState } from "react";
 require("@solidity-parser/parser/dist/index.iife.js");
 
@@ -13,15 +15,34 @@ export default function Editor() {
   const SolidityParser: any = window.SolidityParser;
   const { parse, visit, loc } = SolidityParser;
 
-  const [text, setText] = useState("");
+  const [text, setText] = useState(`\
+contract Test {
+  uint public num;
+  
+  uint public num2;
+  
+  string private secretStr;
+
+  function test() public { 
+    num = 69;
+  }
+}`);
   const [parsed, setParsed] = useState("");
   const [nodes, setNodes] = useState<any[]>([]);
   const [edges, setEdges] = useState<any[]>([]);
 
   useEffect(() => {
     try {
-      setParsed(parse(text, { loc: true }));
+      const parsed = parse(text, { loc: true, range: true });
+      console.log("parsed tree", parsed);
+      // debugger;
+      setParsed(parsed);
     } catch (_) {}
+    if (!text) {
+      console.log("Error");
+      setNodes([]);
+      setEdges([]);
+    }
   }, [text]);
 
   async function onParseUpdate() {
@@ -34,7 +55,7 @@ export default function Editor() {
 
     try {
       visit(parsed, {
-        ContractDefinition: async (node: any) => {
+        ContractDefinition: async (node: ContractDefinition) => {
           // All the nodes that will be added to the graph that are a contract definition or inside a contract definition
           const contractNodes: any = [
             getContract(node),
@@ -70,6 +91,7 @@ export default function Editor() {
       <div className="h-full w-1/2 flex justify-center">
         <textarea
           className="flex bg-slate-200 h-full w-full"
+          value={text}
           onChange={(e) => {
             setText(e.target.value);
           }}
