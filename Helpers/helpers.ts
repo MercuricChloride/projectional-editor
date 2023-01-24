@@ -1,7 +1,6 @@
-import { FunctionDefinition } from "@solidity-parser/parser/dist/src/ast-types";
+import { ContractDefinition, FunctionDefinition } from "@solidity-parser/parser/dist/src/ast-types";
 import { ElkNode } from "elkjs";
 import ELK from "elkjs/lib/elk.bundled.js";
-import { ASTNodeTypeString, ContractDefinition } from "solidity-parser-diligence";
 const elk = new ELK();
 
 // These are helper functions meant to play nice with the visitor pattern
@@ -30,7 +29,7 @@ export interface INode {
   height?: number;
 }
 
-interface IVariable {
+export interface IVariable {
   name: string;
   visibility: string;
   typeName: {
@@ -38,9 +37,15 @@ interface IVariable {
   };
 }
 
-const DEFAULT_NODE_WIDTH = 300;
-const DEFAULT_NODE_HEIGHT = 200;
-const DEFAULT_GRAPH_TYPE = "radial";
+export interface ScopeRange {
+  start: number;
+  end: number;
+  name: string;
+}
+
+const DEFAULT_NODE_WIDTH = 200;
+const DEFAULT_NODE_HEIGHT = 100;
+const DEFAULT_GRAPH_TYPE = "mrtree";
 
 
 export function defaultINode(): INode {
@@ -159,11 +164,6 @@ export function generateId(scope: string[]) {
   }, '');
 }
  
-export interface ScopeRange {
-  start: number;
-  end: number;
-  name: string;
-}
 
 export function getScopeRange(range: any, name:string | null): ScopeRange {
   const [start, end] = range;
