@@ -1,4 +1,6 @@
 import {
+  defaultINode,
+  formatNodes,
   getContract,
   getFunctionDeclarations,
   getNodeId,
@@ -30,8 +32,13 @@ contract Test {
   
   string private secretStr;
 
+
   function test() public { 
     num = 69;
+  }
+
+  function shouldHaveLocal() public {
+    uint local;
   }
 }`);
   const [parsed, setParsed] = useState("");
@@ -55,9 +62,7 @@ contract Test {
   async function onParseUpdate() {
     // we are using a set to track each contract and it's sub nodes
 
-    const contracts: INode[] = [];
-
-    const newTestNodes: string[] = [];
+    const newTestNodes: INode[] = [];
 
     const ranges: ScopeRange[] = [];
 
@@ -78,7 +83,19 @@ contract Test {
 
           // Add the contract to the new test nodes
           const nodeID = getNodeId(ranges, nodeScope.start);
-          newTestNodes.push(nodeID);
+          const emptyNode = defaultINode();
+          const _node = {
+            ...emptyNode,
+            id: nodeID,
+            label: name,
+            data: {
+              type: "contract",
+              label: name,
+              name,
+              range,
+            },
+          };
+          newTestNodes.push(_node);
         },
 
         FunctionDefinition: async (node: FunctionDefinition) => {
@@ -96,7 +113,19 @@ contract Test {
 
           // Add the contract to the new test nodes
           const nodeID = getNodeId(ranges, nodeScope.start);
-          newTestNodes.push(nodeID);
+          const emptyNode = defaultINode();
+          const _node = {
+            ...emptyNode,
+            id: nodeID,
+            label: name,
+            data: {
+              type: "function",
+              label: name,
+              name,
+              range,
+            },
+          };
+          newTestNodes.push(_node);
         },
 
         VariableDeclaration: async (node: VariableDeclaration) => {
@@ -108,7 +137,19 @@ contract Test {
 
           // Add the contract to the new test nodes
           const nodeID = getNodeId(ranges, nodeScope.start);
-          newTestNodes.push(nodeID);
+          const emptyNode = defaultINode();
+          const _node = {
+            ...emptyNode,
+            id: nodeID,
+            label: name,
+            data: {
+              type: "variable",
+              label: name,
+              name,
+              range,
+            },
+          };
+          newTestNodes.push(_node);
         },
       });
     } catch (e) {
@@ -116,7 +157,7 @@ contract Test {
     }
     console.log("New test nodes: ", newTestNodes);
     // Position the nodes
-    const [newNodes, newEdges] = await positionNodes(Array.from(contracts));
+    const [newNodes, newEdges] = await formatNodes(newTestNodes);
 
     // only set the nodes if there are new nodes to set, IE not in the middle of editing
     if (newNodes.length > 0) {
