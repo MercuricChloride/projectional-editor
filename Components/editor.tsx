@@ -12,7 +12,11 @@ import {
   FunctionDefinition,
   VariableDeclaration,
 } from "@solidity-parser/parser/dist/src/ast-types";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { ContractNode } from "./Nodes/ContractNode";
+import { FunctionNode } from "./Nodes/FunctionNode";
+import { LocalVariableNode } from "./Nodes/LocalVariableNode";
+import { StateVariableNode } from "./Nodes/StateVariableNode";
 require("@solidity-parser/parser/dist/index.iife.js");
 
 export default function Editor() {
@@ -40,25 +44,26 @@ contract Test {
   const [parsed, setParsed] = useState("");
   const [nodes, setNodes] = useState<any[]>([]);
   const [edges, setEdges] = useState<any[]>([]);
+  const [detailLevel, setDetailLevel] = useState(3);
+  const nodeTypes = useMemo(
+    () => ({
+      function: FunctionNode,
+      stateVariable: StateVariableNode,
+      localVariable: LocalVariableNode,
+      contract: ContractNode,
+    }),
+    []
+  );
 
   useEffect(() => {
     try {
       const parsed = parse(text, { loc: true, range: true });
-      console.log("parsed tree", parsed);
-      // debugger;
       setParsed(parsed);
     } catch (_) {}
-    if (!text) {
-      console.log("Error");
-      setNodes([]);
-      setEdges([]);
-    }
   }, [text]);
 
   async function onParseUpdate() {
-    // we are using a set to track each contract and it's sub nodes
-
-    const newTestNodes: INode[] = [];
+    const newNodes: INode[] = [];
 
     const ranges: ScopeRange[] = [];
 
@@ -66,15 +71,10 @@ contract Test {
       visit(parsed, {
         ContractDefinition: async (node: ContractDefinition) => {
           const { range, name } = node;
-          console.log("ContractDefinition: ", node);
-
-          if (!range) {
-            console.error("No range found for node: ", node);
-            return;
-          }
+          console.log("contract", node);
 
           // Add the range to the list of ranges
-          const nodeScope = getScopeRange(range, name);
+          const nodeScope = getScopeRange(range, name); // only constructor has no name
           ranges.push(nodeScope);
 
           // Add the contract to the new test nodes
@@ -84,6 +84,7 @@ contract Test {
             ...emptyNode,
             id: nodeID,
             label: name,
+            type: "contract",
             data: {
               type: "contract",
               label: name,
@@ -91,20 +92,19 @@ contract Test {
               range,
             },
           };
-          newTestNodes.push(_node);
+          newNodes.push(_node);
         },
 
         FunctionDefinition: async (node: FunctionDefinition) => {
           const { range, name } = node;
-          console.log("FunctionDefinition: ", node);
+          console.log("function", node);
 
-          if (!range) {
-            console.error("No range found for node: ", node);
-            return;
-          }
-
+          // if (!range || !name) return;
           // Add the range to the list of ranges
-          const nodeScope = getScopeRange(range, name);
+          const nodeScope = getScopeRange(
+            range,
+            name === null ? "constructor" : name
+          );
           ranges.push(nodeScope);
 
           // Add the contract to the new test nodes
@@ -114,6 +114,7 @@ contract Test {
             ...emptyNode,
             id: nodeID,
             label: name,
+            type: "function",
             data: {
               type: "function",
               label: name,
@@ -121,12 +122,13 @@ contract Test {
               range,
             },
           };
-          newTestNodes.push(_node);
+          newNodes.push(_node);
         },
 
         VariableDeclaration: async (node: VariableDeclaration) => {
-          console.log("VariableDeclaration: ", node);
           const { range, name } = node;
+          console.log("variable", node);
+          if (!range || !name) return;
 
           const nodeScope = getScopeRange(range, name);
           ranges.push(nodeScope);
@@ -138,6 +140,7 @@ contract Test {
             ...emptyNode,
             id: nodeID,
             label: name,
+            type: node.isStateVar ? "stateVariable" : "localVariable",
             data: {
               type: "variable",
               label: name,
@@ -145,42 +148,74 @@ contract Test {
               range,
             },
           };
-          newTestNodes.push(_node);
+          newNodes.push(_node);
         },
       });
     } catch (e) {
       console.error("Something went wrong: ", e);
     }
-    console.log("New test nodes: ", newTestNodes);
+    // filter the nodes according to the level of detail we want
+    const filteredNodes = newNodes.filter(
+      (node) => node.id.split("-").length <= detailLevel && node.id.length > 0
+    );
     // Position the nodes
-    const [newNodes, newEdges] = await formatNodes(newTestNodes);
+    const [formattedNodes, formattedEdges] = await formatNodes(newNodes);
 
-    // only set the nodes if there are new nodes to set, IE not in the middle of editing
-    if (newNodes.length > 0) {
-      console.log("Setting nodes and edges: ", newNodes);
-      console.log("Setting nodes and edges: ", newEdges);
-      setNodes(newNodes);
-      setEdges(newEdges);
+    // only set the nodes if there are formatted nodes to set, IE not in the middle of editing
+    if (formattedNodes.length > 0) {
+      // setNodes(formattedNodes);
+      // setEdges(formattedEdges);
+      setNodes(
+        formattedNodes.filter(
+          (node) => node.id.split("-").length <= detailLevel
+        ) // filter the nodes according to the level of detail we want
+      );
+      setEdges(
+        formattedEdges.filter(
+          (edge) => edge.source.split("-").length <= detailLevel
+        ) // filter the nodes according to the level of detail we want
+      );
     }
   }
 
   useEffect(() => {
     onParseUpdate();
-  }, [parsed]);
+  }, [parsed, detailLevel]);
 
   return (
     <div className="h-screen w-screen flex">
       <div className="h-full w-1/2 flex justify-center">
-        <textarea
-          className="flex bg-slate-200 h-full w-full"
-          value={text}
-          onChange={(e) => {
-            setText(e.target.value);
-          }}
-        />
+        <div className="flex flex-col h-full w-full">
+          <div className="flex flex-col">
+            <button
+              className="bg-slate-400"
+              onClick={() => {
+                setDetailLevel(detailLevel + 1);
+              }}
+            >
+              Increase Detail
+            </button>
+            <button
+              className="bg-slate-400"
+              onClick={() => {
+                setDetailLevel(detailLevel - 1);
+              }}
+            >
+              Decrease Detail
+            </button>
+          </div>
+          <div className="flex flex-col"></div>
+          <textarea
+            className="flex bg-slate-200 h-full w-full"
+            value={text}
+            onChange={(e) => {
+              setText(e.target.value);
+            }}
+          />
+        </div>
       </div>
       <div className="h-full w-1/2 flex justify-center">
-        <Flow defaultNodes={nodes} defaultEdges={edges} />
+        <Flow defaultNodes={nodes} defaultEdges={edges} nodeTypes={nodeTypes} />
       </div>
     </div>
   );

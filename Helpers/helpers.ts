@@ -7,14 +7,19 @@ const elk = new ELK();
 // I use them to traverse the AST and extract the information I need
 // I am going to keep things mainly functional, so everything should be pure and return a new array
 
+const DEFAULT_NODE_WIDTH = 150;
+const DEFAULT_NODE_HEIGHT = 150;
+const DEFAULT_GRAPH_TYPE = "mrtree";
+
 // I think that most of these functions should return an array of strings which will be the node labels for the generated graph
 export interface INode {
   id: string;
-  data?: any;
   position: {
     x: number;
     y: number;
   };
+  type?: string;
+  data?: any;
   loc?: {
     start: {
       line: number;
@@ -43,10 +48,6 @@ export interface ScopeRange {
   name: string;
 }
 
-const DEFAULT_NODE_WIDTH = 200;
-const DEFAULT_NODE_HEIGHT = 100;
-const DEFAULT_GRAPH_TYPE = "mrtree";
-
 
 export function defaultINode(): INode {
   return {
@@ -70,6 +71,7 @@ export function handleContract(contractNode: ContractDefinition): INode {
     data: {
       label: generateId([name]),
     },
+    type: "contract",
     width: DEFAULT_NODE_WIDTH,
     height: DEFAULT_NODE_HEIGHT,
   };
@@ -84,65 +86,10 @@ export function handleFunction(functionNode: FunctionDefinition): INode {
     data: {
       label: generateId([name]),
     },
+    type: "function",
     width: DEFAULT_NODE_WIDTH,
     height: DEFAULT_NODE_HEIGHT,
   };
-}
-
-// inputs:
-// contractNode: an object representing a contract node in the AST
-// output: an array of INode objects with no real position
-export function getStateVariables(contractNode: any): INode[] {
-  const contractName = contractNode.name;
-
-  return contractNode.subNodes
-    .filter((subNode: any) => subNode.type === "StateVariableDeclaration")
-    .flatMap(({ variables }: any) =>
-      variables.map((variable: any) => {
-        console.log('variable', variable);
-        return {
-          id: generateId([contractName, variable]),
-          position: { x: 0, y: 0 },
-          loc: variable.loc,
-          data: {
-            label: displayVariable(variable),
-          },
-          width: DEFAULT_NODE_WIDTH /2,
-          height: DEFAULT_NODE_HEIGHT /2 ,
-        };
-      })
-    );
-}
-
-export function getFunctionDeclarations(contractNode: any): INode[] {
-  const contractName = contractNode.name;
-
-  return contractNode.subNodes
-    .filter((subNode: any) => subNode.type === "FunctionDefinition")
-    .flatMap(({ variables }: any) =>
-      variables.map((variable: any) => {
-        return {
-          id: generateId([contractName, variable]),
-          position: { x: 0, y: 0 },
-          loc: variable.loc,
-          data: {
-            label: displayVariable(variable),
-          },
-          width: DEFAULT_NODE_WIDTH /2,
-          height: DEFAULT_NODE_HEIGHT /2 ,
-        };
-      })
-    );
-}
-
-export function displayVariable(variable: IVariable) {
-  const {
-    name,
-    visibility,
-    typeName: { name: type },
-  } = variable;
-  return `${visibility} ${type}:
-   ${name}`;
 }
 
 // @notice A function to define the ID for a node. This ID setup is to make it easy to define the scope of things when we position the nodes and draw the edges.
@@ -167,7 +114,10 @@ export function generateId(scope: string[]) {
 
 export function getScopeRange(range: any, name:string | null): ScopeRange {
   const [start, end] = range;
-  if(name === null) throw new Error("Unnamed variable or function");
+  if(name === null){
+    console.log(range, name)
+    throw new Error("Unnamed variable or function");
+  }
   return {
       start,
       end,
