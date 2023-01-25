@@ -18,7 +18,7 @@ export interface INode {
     x: number;
     y: number;
   };
-  type?: string;
+  type: string;
   data?: any;
   loc?: {
     start: {
@@ -52,6 +52,7 @@ export interface ScopeRange {
 export function defaultINode(): INode {
   return {
     id: "",
+    type: "",
     position: { x: 0, y: 0 },
     width: DEFAULT_NODE_WIDTH,
     height: DEFAULT_NODE_HEIGHT,

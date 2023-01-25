@@ -17,9 +17,13 @@ import { ContractNode } from "./Nodes/ContractNode";
 import { FunctionNode } from "./Nodes/FunctionNode";
 import { LocalVariableNode } from "./Nodes/LocalVariableNode";
 import { StateVariableNode } from "./Nodes/StateVariableNode";
+import AceEditor from "react-ace";
+import "ace-builds/src-noconflict/mode-java";
+import "ace-builds/src-noconflict/theme-github";
+import "ace-builds/src-noconflict/ext-language_tools";
 require("@solidity-parser/parser/dist/index.iife.js");
 
-export default function Editor() {
+export default function EditorInterface() {
   // @ts-ignore
   const SolidityParser: any = window.SolidityParser;
   const { parse, visit, loc } = SolidityParser;
@@ -45,6 +49,7 @@ contract Test {
   const [nodes, setNodes] = useState<any[]>([]);
   const [edges, setEdges] = useState<any[]>([]);
   const [detailLevel, setDetailLevel] = useState(3);
+  const [nodeTypesToRemove, setNodeTypesToRemove] = useState<string[]>();
   const nodeTypes = useMemo(
     () => ({
       function: FunctionNode,
@@ -167,7 +172,9 @@ contract Test {
       // setEdges(formattedEdges);
       setNodes(
         formattedNodes.filter(
-          (node) => node.id.split("-").length <= detailLevel
+          (node) =>
+            node.id.split("-").length <= detailLevel &&
+            !nodeTypesToRemove?.includes(node.type)
         ) // filter the nodes according to the level of detail we want
       );
       setEdges(
@@ -180,38 +187,68 @@ contract Test {
 
   useEffect(() => {
     onParseUpdate();
-  }, [parsed, detailLevel]);
+  }, [parsed, detailLevel, nodeTypesToRemove]);
 
   return (
     <div className="h-screen w-screen flex">
       <div className="h-full w-1/2 flex justify-center">
-        <div className="flex flex-col h-full w-full">
-          <div className="flex flex-col">
-            <button
-              className="bg-slate-400"
-              onClick={() => {
-                setDetailLevel(detailLevel + 1);
-              }}
-            >
-              Increase Detail
-            </button>
-            <button
-              className="bg-slate-400"
-              onClick={() => {
-                setDetailLevel(detailLevel - 1);
-              }}
-            >
-              Decrease Detail
-            </button>
+        <div className="flex flex-col h-full w-full justify-flex-start">
+          <div className="flex bg-slate-200 border-black border-2 justify-around">
+            <div className="flex flex-col">
+              Types to show:
+              {Object.keys(nodeTypes).map((nodeType) => (
+                <div className="flex flex-row">
+                  <input
+                    type="checkbox"
+                    checked={!nodeTypesToRemove?.includes(nodeType)}
+                    onChange={(e) => {
+                      if (!e.target.checked) {
+                        setNodeTypesToRemove([
+                          ...(nodeTypesToRemove || []),
+                          nodeType,
+                        ]);
+                      } else {
+                        setNodeTypesToRemove(
+                          nodeTypesToRemove?.filter((t) => t !== nodeType)
+                        );
+                      }
+                    }}
+                  />
+                  <label>{nodeType}</label>
+                </div>
+              ))}
+            </div>
+            <div className="flex flex-col w-3/12 justify-around">
+              <button
+                className="bg-slate-400 rounded-full"
+                onClick={() => {
+                  setDetailLevel(detailLevel + 1);
+                }}
+              >
+                Increase Detail
+              </button>
+              Detail Level: {detailLevel}
+              <button
+                className="bg-slate-400 rounded-full"
+                onClick={() => {
+                  setDetailLevel(detailLevel - 1);
+                }}
+              >
+                Decrease Detail
+              </button>
+            </div>
           </div>
-          <div className="flex flex-col"></div>
-          <textarea
-            className="flex bg-slate-200 h-full w-full"
+          <AceEditor
+            mode="solidity"
+            theme="monokai"
             value={text}
-            onChange={(e) => {
-              setText(e.target.value);
+            onChange={(code) => {
+              setText(code);
             }}
+            name="UNIQUE_ID_OF_DIV"
+            editorProps={{ $blockScrolling: true }}
           />
+          ,
         </div>
       </div>
       <div className="h-full w-1/2 flex justify-center">
