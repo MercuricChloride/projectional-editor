@@ -17,6 +17,7 @@ import { ContractNode } from "./Nodes/ContractNode";
 import { FunctionNode } from "./Nodes/FunctionNode";
 import { LocalVariableNode } from "./Nodes/LocalVariableNode";
 import { StateVariableNode } from "./Nodes/StateVariableNode";
+
 import AceEditor from "react-ace";
 import "ace-builds/src-noconflict/mode-java";
 import "ace-builds/src-noconflict/theme-github";
@@ -242,13 +243,14 @@ contract Test {
             mode="solidity"
             theme="monokai"
             value={text}
+            keyboardHandler="vim"
             onChange={(code) => {
               setText(code);
             }}
             name="UNIQUE_ID_OF_DIV"
             editorProps={{ $blockScrolling: true }}
+            height="100%"
           />
-          ,
         </div>
       </div>
       <div className="h-full w-1/2 flex justify-center">
