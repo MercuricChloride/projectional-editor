@@ -1,16 +1,30 @@
 import {
-  getContract,
-  getFunctionDeclarations,
-  getStateVariables,
+  defaultINode,
+  formatNodes,
+  getNodeId,
+  getScopeRange,
   INode,
-  positionNodes,
+  ScopeRange,
 } from "@/Helpers/helpers";
 import Flow from "@/pages/flow";
-import { ContractDefinition } from "@solidity-parser/parser/dist/src/ast-types";
-import { useEffect, useState } from "react";
+import {
+  ContractDefinition,
+  FunctionDefinition,
+  VariableDeclaration,
+} from "@solidity-parser/parser/dist/src/ast-types";
+import { useEffect, useMemo, useState } from "react";
+import { ContractNode } from "./Nodes/ContractNode";
+import { FunctionNode } from "./Nodes/FunctionNode";
+import { LocalVariableNode } from "./Nodes/LocalVariableNode";
+import { StateVariableNode } from "./Nodes/StateVariableNode";
+
+import AceEditor from "react-ace";
+import "ace-builds/src-noconflict/mode-java";
+import "ace-builds/src-noconflict/theme-github";
+import "ace-builds/src-noconflict/ext-language_tools";
 require("@solidity-parser/parser/dist/index.iife.js");
 
-export default function Editor() {
+export default function EditorInterface() {
   // @ts-ignore
   const SolidityParser: any = window.SolidityParser;
   const { parse, visit, loc } = SolidityParser;
@@ -23,82 +37,224 @@ contract Test {
   
   string private secretStr;
 
+
   function test() public { 
     num = 69;
+  }
+
+  function shouldHaveLocal() public {
+    uint local;
   }
 }`);
   const [parsed, setParsed] = useState("");
   const [nodes, setNodes] = useState<any[]>([]);
   const [edges, setEdges] = useState<any[]>([]);
+  const [detailLevel, setDetailLevel] = useState(3);
+  const [nodeTypesToRemove, setNodeTypesToRemove] = useState<string[]>();
+  const nodeTypes = useMemo(
+    () => ({
+      function: FunctionNode,
+      stateVariable: StateVariableNode,
+      localVariable: LocalVariableNode,
+      contract: ContractNode,
+    }),
+    []
+  );
 
   useEffect(() => {
     try {
       const parsed = parse(text, { loc: true, range: true });
-      console.log("parsed tree", parsed);
-      // debugger;
       setParsed(parsed);
     } catch (_) {}
-    if (!text) {
-      console.log("Error");
-      setNodes([]);
-      setEdges([]);
-    }
   }, [text]);
 
   async function onParseUpdate() {
-    // we are using a set to track each contract and it's sub nodes
-    const contracts: Set<INode> = new Set();
+    const newNodes: INode[] = [];
 
-    // we then are going to get each contract and it's sub nodes
-    // then push it to the set
-    // then after the visitor is all finished, we will position the nodes
+    const ranges: ScopeRange[] = [];
 
     try {
       visit(parsed, {
         ContractDefinition: async (node: ContractDefinition) => {
-          // All the nodes that will be added to the graph that are a contract definition or inside a contract definition
-          const contractNodes: any = [
-            getContract(node),
-            ...getStateVariables(node),
-          ];
+          const { range, name } = node;
+          console.log("contract", node);
 
-          // Add the contract to the set
-          contracts.add(contractNodes);
+          // Add the range to the list of ranges
+          const nodeScope = getScopeRange(range, name); // only constructor has no name
+          ranges.push(nodeScope);
+
+          // Add the contract to the new test nodes
+          const nodeID = getNodeId(ranges, nodeScope.start);
+          const emptyNode = defaultINode();
+          const _node = {
+            ...emptyNode,
+            id: nodeID,
+            label: name,
+            type: "contract",
+            data: {
+              type: "contract",
+              label: name,
+              name,
+              range,
+            },
+          };
+          newNodes.push(_node);
+        },
+
+        FunctionDefinition: async (node: FunctionDefinition) => {
+          const { range, name } = node;
+          console.log("function", node);
+
+          // if (!range || !name) return;
+          // Add the range to the list of ranges
+          const nodeScope = getScopeRange(
+            range,
+            name === null ? "constructor" : name
+          );
+          ranges.push(nodeScope);
+
+          // Add the contract to the new test nodes
+          const nodeID = getNodeId(ranges, nodeScope.start);
+          const emptyNode = defaultINode();
+          const _node = {
+            ...emptyNode,
+            id: nodeID,
+            label: name,
+            type: "function",
+            data: {
+              type: "function",
+              label: name,
+              name,
+              range,
+            },
+          };
+          newNodes.push(_node);
+        },
+
+        VariableDeclaration: async (node: VariableDeclaration) => {
+          const { range, name } = node;
+          console.log("variable", node);
+          if (!range || !name) return;
+
+          const nodeScope = getScopeRange(range, name);
+          ranges.push(nodeScope);
+
+          // Add the contract to the new test nodes
+          const nodeID = getNodeId(ranges, nodeScope.start);
+          const emptyNode = defaultINode();
+          const _node = {
+            ...emptyNode,
+            id: nodeID,
+            label: name,
+            type: node.isStateVar ? "stateVariable" : "localVariable",
+            data: {
+              type: "variable",
+              label: name,
+              name,
+              range,
+            },
+          };
+          newNodes.push(_node);
         },
       });
     } catch (e) {
       console.error("Something went wrong: ", e);
     }
-
+    // filter the nodes according to the level of detail we want
+    const filteredNodes = newNodes.filter(
+      (node) => node.id.split("-").length <= detailLevel && node.id.length > 0
+    );
     // Position the nodes
-    const [newNodes, newEdges] = await positionNodes(Array.from(contracts));
+    const [formattedNodes, formattedEdges] = await formatNodes(newNodes);
 
-    // only set the nodes if there are new nodes to set, IE not in the middle of editing
-    if (newNodes.length > 0) {
-      console.log("Setting nodes and edges: ", newNodes);
-      console.log("Setting nodes and edges: ", newEdges);
-      setNodes(newNodes);
-      setEdges(newEdges);
+    // only set the nodes if there are formatted nodes to set, IE not in the middle of editing
+    if (formattedNodes.length > 0) {
+      // setNodes(formattedNodes);
+      // setEdges(formattedEdges);
+      setNodes(
+        formattedNodes.filter(
+          (node) =>
+            node.id.split("-").length <= detailLevel &&
+            !nodeTypesToRemove?.includes(node.type)
+        ) // filter the nodes according to the level of detail we want
+      );
+      setEdges(
+        formattedEdges.filter(
+          (edge) => edge.source.split("-").length <= detailLevel
+        ) // filter the nodes according to the level of detail we want
+      );
     }
   }
 
   useEffect(() => {
     onParseUpdate();
-  }, [parsed]);
+  }, [parsed, detailLevel, nodeTypesToRemove]);
 
   return (
     <div className="h-screen w-screen flex">
       <div className="h-full w-1/2 flex justify-center">
-        <textarea
-          className="flex bg-slate-200 h-full w-full"
-          value={text}
-          onChange={(e) => {
-            setText(e.target.value);
-          }}
-        />
+        <div className="flex flex-col h-full w-full justify-flex-start">
+          <div className="flex bg-slate-200 border-black border-2 justify-around">
+            <div className="flex flex-col">
+              Types to show:
+              {Object.keys(nodeTypes).map((nodeType) => (
+                <div className="flex flex-row">
+                  <input
+                    type="checkbox"
+                    checked={!nodeTypesToRemove?.includes(nodeType)}
+                    onChange={(e) => {
+                      if (!e.target.checked) {
+                        setNodeTypesToRemove([
+                          ...(nodeTypesToRemove || []),
+                          nodeType,
+                        ]);
+                      } else {
+                        setNodeTypesToRemove(
+                          nodeTypesToRemove?.filter((t) => t !== nodeType)
+                        );
+                      }
+                    }}
+                  />
+                  <label>{nodeType}</label>
+                </div>
+              ))}
+            </div>
+            <div className="flex flex-col w-3/12 justify-around">
+              <button
+                className="bg-slate-400 rounded-full"
+                onClick={() => {
+                  setDetailLevel(detailLevel + 1);
+                }}
+              >
+                Increase Detail
+              </button>
+              Detail Level: {detailLevel}
+              <button
+                className="bg-slate-400 rounded-full"
+                onClick={() => {
+                  setDetailLevel(detailLevel - 1);
+                }}
+              >
+                Decrease Detail
+              </button>
+            </div>
+          </div>
+          <AceEditor
+            mode="solidity"
+            theme="monokai"
+            value={text}
+            keyboardHandler="vim"
+            onChange={(code) => {
+              setText(code);
+            }}
+            name="UNIQUE_ID_OF_DIV"
+            editorProps={{ $blockScrolling: true }}
+            height="100%"
+          />
+        </div>
       </div>
       <div className="h-full w-1/2 flex justify-center">
-        <Flow defaultNodes={nodes} defaultEdges={edges} />
+        <Flow defaultNodes={nodes} defaultEdges={edges} nodeTypes={nodeTypes} />
       </div>
     </div>
   );

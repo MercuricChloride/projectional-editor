@@ -12,9 +12,10 @@ import "reactflow/dist/style.css";
 interface Props {
   defaultNodes: any[];
   defaultEdges: any[];
+  nodeTypes: any;
 }
 
-export default function Flow({ defaultNodes, defaultEdges }: Props) {
+export default function Flow({ defaultNodes, defaultEdges, nodeTypes }: Props) {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
@@ -29,7 +30,9 @@ export default function Flow({ defaultNodes, defaultEdges }: Props) {
       edges={defaultEdges}
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
+      nodeTypes={nodeTypes}
       onConnect={onConnect}
+      nodesDraggable={true}
     >
       <MiniMap />
       <Controls />
