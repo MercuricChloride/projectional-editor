@@ -32,6 +32,7 @@ export default function Flow({ defaultNodes, defaultEdges, nodeTypes }: Props) {
       onEdgesChange={onEdgesChange}
       nodeTypes={nodeTypes}
       onConnect={onConnect}
+      nodesDraggable={true}
     >
       <MiniMap />
       <Controls />
