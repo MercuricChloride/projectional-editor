@@ -2,9 +2,12 @@ import { useEffect, useState } from "react";
 import Parser from "web-tree-sitter";
 
 export default function ParserPage(props: any) {
-  const [text, setText] = useState("");
+  const [text, setText] = useState(`\
+  contract Test {
+    uint public num;
+    }`);
   const [tree, setTree] = useState("");
-  const [parser, setParser] = useState<any>();
+  const [parser, setParser] = useState<Parser>();
 
   const init = async () => {
     await Parser.init({
@@ -29,14 +32,16 @@ export default function ParserPage(props: any) {
         console.log(text);
         const tree = parser.parse(text);
         setTree(tree.rootNode.toString());
-        console.log(tree.rootNode.toString());
       } catch (_) {}
     }
-  }, [text, parser]);
+  }, [text]);
 
   return (
-    <div>
-      <textarea onChange={(e) => setText(e.target.value)} />
+    <div className="h-screen w-screen">
+      <textarea
+        className="h-full w-full"
+        onChange={(e) => setText(e.target.value)}
+      />
     </div>
   );
 }
