@@ -10,6 +10,17 @@ import AceEditor from "react-ace";
 import "ace-builds/src-noconflict/mode-java";
 import "ace-builds/src-noconflict/theme-github";
 import "ace-builds/src-noconflict/ext-language_tools";
+import {
+  captureToScopeRange,
+  contractGoodies,
+  goodiesToINodes,
+} from "@/Helpers/treeHelpers";
+import {
+  DEFAULT_NODE_HEIGHT,
+  DEFAULT_NODE_WIDTH,
+  formatNodes,
+  getScopeRange,
+} from "@/Helpers/helpers";
 
 export default function EditorInterface() {
   const [text, setText] = useState(`\
@@ -28,11 +39,14 @@ contract Test {
   function shouldHaveLocal() public {
     uint local;
   }
+}
+contract Test2 {
+  uint public num;
 }`);
-  const [parsed, setParsed] = useState("");
-  const [parsedTree, setParsedTree] = useState<Tree>();
+
   const [nodes, setNodes] = useState<any[]>([]);
   const [edges, setEdges] = useState<any[]>([]);
+
   const [detailLevel, setDetailLevel] = useState(3);
   const [nodeTypesToRemove, setNodeTypesToRemove] = useState<string[]>();
   const nodeTypes = useMemo(
@@ -45,7 +59,12 @@ contract Test {
     []
   );
 
+  // parser class
   const [parser, setParser] = useState<Parser>();
+
+  // parsed syntax tree
+  // should change every time the text changes
+  const [parsedTree, setParsedTree] = useState<Tree>();
 
   const init = async () => {
     await Parser.init({
@@ -56,8 +75,9 @@ contract Test {
     const Solidity = await Parser.Language.load("tree-sitter-solidity.wasm");
 
     const parser = new Parser();
+
     parser.setLanguage(Solidity);
-    console.log(parser);
+
     setParser(parser);
   };
 
@@ -65,31 +85,54 @@ contract Test {
     init();
   }, []);
 
+  // set the parsed tree whenever the text changes
+  // @dev I am not sure why the tree wasn't updating when we were passing in the old tree before. But it seems to be working now
   useEffect(() => {
-    try {
-      // TODO: CONVERT THIS TO TREE-SITTER
-      if (parser) {
-        const tree = parser.parse(text, parsedTree);
-        setParsedTree(tree);
-
-        const walker = tree.walk();
-        console.log("FIRST NODE", walker.currentNode());
-        while (walker.gotoFirstChild()) {
-          console.log("CURRENT NODE", walker.currentNode());
-        }
-
-        console.log("Named children", tree.rootNode.namedChildren);
-      }
-    } catch (_) {}
-  }, [text]);
+    if (parser) {
+      const tree = parser.parse(text);
+      setParsedTree(tree);
+    }
+  }, [text, parser]);
 
   async function onParseUpdate() {
-    // TODO: CONVERT THIS FUNCTION TO WORK ON TREE-SITTER
+    if (parsedTree) {
+      const language = parsedTree.getLanguage();
+
+      const goodies = contractGoodies(language).matches(parsedTree.rootNode);
+      console.log(
+        "goodies",
+        goodies
+        // goodies.map((g) => g.node.text)
+      );
+
+      const scopeRange = goodies.flatMap((goodie) => {
+        return captureToScopeRange(goodie.captures);
+      });
+
+      scopeRange.sort((a, b) => a.start - b.end);
+
+      const rawNodes = goodies.flatMap((goodie) => {
+        return goodiesToINodes(
+          goodie,
+          DEFAULT_NODE_HEIGHT,
+          DEFAULT_NODE_WIDTH,
+          scopeRange
+        );
+      });
+
+      console.log("rawNodes", rawNodes);
+
+      const [nodes, edges] = await formatNodes(rawNodes);
+      setNodes(
+        nodes.filter((node) => node.id.split("-").length <= detailLevel)
+      );
+      setEdges(edges);
+    }
   }
 
   useEffect(() => {
     onParseUpdate();
-  }, [parsed, detailLevel, nodeTypesToRemove]);
+  }, [parsedTree, detailLevel]);
 
   return (
     <div className="h-screen w-screen flex">
@@ -142,9 +185,7 @@ contract Test {
           </div>
           <AceEditor
             mode="java"
-            theme="monokai"
             value={text}
-            keyboardHandler="vim"
             onChange={(code) => {
               setText(code);
             }}

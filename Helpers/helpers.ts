@@ -7,9 +7,9 @@ const elk = new ELK();
 // I use them to traverse the AST and extract the information I need
 // I am going to keep things mainly functional, so everything should be pure and return a new array
 
-const DEFAULT_NODE_WIDTH = 150;
-const DEFAULT_NODE_HEIGHT = 150;
-const DEFAULT_GRAPH_TYPE = "mrtree";
+export const DEFAULT_NODE_WIDTH = 150;
+export const DEFAULT_NODE_HEIGHT = 150;
+export const DEFAULT_GRAPH_TYPE = "mrtree";
 
 // I think that most of these functions should return an array of strings which will be the node labels for the generated graph
 export interface INode {
@@ -154,9 +154,9 @@ export async function formatNodes(nodes: INode[]): Promise<[INode[], any[]]> {
     return {
       id: index.toString(),
       sources,
-      source: sources[0],
-      targets, // we are using the key targets because thats what react flow uses
-      target: targets[0], // we are using the key target because thats what react flow uses
+      source: sources[0], // we have to set `source` because thats what react flow uses
+      targets,
+      target: targets[0], // we have to set `target` because thats what react flow uses
     };
   })
 
@@ -167,7 +167,6 @@ export async function formatNodes(nodes: INode[]): Promise<[INode[], any[]]> {
     width: 10000,
     height: 10000,
   };
-  console.log('graph', graph);
 
   const layout = await elk.layout(graph, {
     layoutOptions: {
@@ -185,7 +184,6 @@ export async function formatNodes(nodes: INode[]): Promise<[INode[], any[]]> {
     }
     return newNode;
   }) || [];
-  console.log('nodesWithPosition', nodesWithPosition);
   
   return [nodesWithPosition, edges];
 }
