@@ -31,12 +31,11 @@ export default function Flow({
   return (
     <ReactFlow
       nodes={nodes}
-      edges={nodes}
+      edges={edges}
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
       nodeTypes={nodeTypes}
       onConnect={onConnect}
-      // nodesDraggable={true}
     >
       <MiniMap />
       <Controls />

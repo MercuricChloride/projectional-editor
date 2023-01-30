@@ -5,15 +5,15 @@ export function ContractNode({ data }: any) {
     <div className="rounded-full bg-gray-500 p-3">
       <Handle
         type="target"
-        position={Position.Left}
-        style={{ background: "#555", left: "50%" }}
+        position={Position.Top}
+        style={{ background: "#555" }}
       />
       <div className="text-center">{data.visibility} Contract:</div>
       <div className="text-center">{data.label}</div>
       <Handle
         type="source"
-        position={Position.Right}
-        style={{ background: "#555", left: "50%" }}
+        position={Position.Bottom}
+        style={{ background: "#555" }}
       />
     </div>
   );

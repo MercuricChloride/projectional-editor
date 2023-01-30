@@ -97,7 +97,6 @@ contract Test2 {
   }, []);
 
   // set the parsed tree whenever the text changes
-  // @dev I am not sure why the tree wasn't updating when we were passing in the old tree before. But it seems to be working now
   useEffect(() => {
     if (parser) {
       const tree = parser.parse(text);
@@ -110,18 +109,16 @@ contract Test2 {
       const language = parsedTree.getLanguage();
 
       const goodies = contractGoodies(language).matches(parsedTree.rootNode);
-      console.log(
-        "goodies",
-        goodies
-        // goodies.map((g) => g.node.text)
-      );
+      console.log("goodies", goodies);
 
       const scopeRange = goodies.flatMap((goodie) => {
         return captureToScopeRange(goodie.captures);
       });
 
+      // sort by start position
       scopeRange.sort((a, b) => a.start - b.end);
 
+      // unpositioned nodes
       const rawNodes = goodies.flatMap((goodie) => {
         return goodiesToINodes(
           goodie,
@@ -131,17 +128,14 @@ contract Test2 {
         );
       });
 
-      console.log("rawNodes", rawNodes);
-
       const [nodes, edges] = await formatNodes(
-        rawNodes
-        // const [nodes, edges] = await formatNodes(
-        // rawNodes.filter((node) => node.id.split("-").length <= detailLevel)
+        rawNodes.filter(
+          (node) =>
+            node.id.split("-").length <= detailLevel &&
+            !nodeTypesToRemove?.includes(node.type)
+        )
       );
-      setNodes(
-        nodes.filter((node) => node.id.split("-").length <= detailLevel)
-      );
-      console.log("edges", edges);
+      setNodes(nodes);
       setEdges(edges);
     }
   }
