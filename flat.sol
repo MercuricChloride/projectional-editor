@@ -1,4 +1,5 @@
 pragma solidity ^0.8.0;
+
 // SPDX-License-Identifier: MIT
 
 interface IController {
@@ -114,7 +115,8 @@ interface IStaking is IStakingData {
 
     function setMaxAllocationEpochs(uint32 _maxAllocationEpochs) external;
 
-    function setRebateRatio(uint32 _alphaNumerator, uint32 _alphaDenominator) external;
+    function setRebateRatio(uint32 _alphaNumerator, uint32 _alphaDenominator)
+        external;
 
     function setDelegationRatio(uint32 _delegationRatio) external;
 
@@ -126,7 +128,8 @@ interface IStaking is IStakingData {
 
     function setDelegationParametersCooldown(uint32 _blocks) external;
 
-    function setDelegationUnbondingPeriod(uint32 _delegationUnbondingPeriod) external;
+    function setDelegationUnbondingPeriod(uint32 _delegationUnbondingPeriod)
+        external;
 
     function setDelegationTaxPercentage(uint32 _percentage) external;
 
@@ -138,7 +141,10 @@ interface IStaking is IStakingData {
 
     function setOperator(address _operator, bool _allowed) external;
 
-    function isOperator(address _operator, address _indexer) external view returns (bool);
+    function isOperator(address _operator, address _indexer)
+        external
+        view
+        returns (bool);
 
     // -- Staking --
 
@@ -161,11 +167,17 @@ interface IStaking is IStakingData {
 
     // -- Delegation --
 
-    function delegate(address _indexer, uint256 _tokens) external returns (uint256);
+    function delegate(address _indexer, uint256 _tokens)
+        external
+        returns (uint256);
 
-    function undelegate(address _indexer, uint256 _shares) external returns (uint256);
+    function undelegate(address _indexer, uint256 _shares)
+        external
+        returns (uint256);
 
-    function withdrawDelegated(address _indexer, address _newIndexer) external returns (uint256);
+    function withdrawDelegated(address _indexer, address _newIndexer)
+        external
+        returns (uint256);
 
     // -- Channel management and allocations --
 
@@ -188,7 +200,8 @@ interface IStaking is IStakingData {
 
     function closeAllocation(address _allocationID, bytes32 _poi) external;
 
-    function closeAllocationMany(CloseAllocationRequest[] calldata _requests) external;
+    function closeAllocationMany(CloseAllocationRequest[] calldata _requests)
+        external;
 
     function closeAndAllocate(
         address _oldAllocationID,
@@ -205,19 +218,32 @@ interface IStaking is IStakingData {
 
     function claim(address _allocationID, bool _restake) external;
 
-    function claimMany(address[] calldata _allocationID, bool _restake) external;
+    function claimMany(address[] calldata _allocationID, bool _restake)
+        external;
 
     // -- Getters and calculations --
 
     function hasStake(address _indexer) external view returns (bool);
 
-    function getIndexerStakedTokens(address _indexer) external view returns (uint256);
+    function getIndexerStakedTokens(address _indexer)
+        external
+        view
+        returns (uint256);
 
-    function getIndexerCapacity(address _indexer) external view returns (uint256);
+    function getIndexerCapacity(address _indexer)
+        external
+        view
+        returns (uint256);
 
-    function getAllocation(address _allocationID) external view returns (Allocation memory);
+    function getAllocation(address _allocationID)
+        external
+        view
+        returns (Allocation memory);
 
-    function getAllocationState(address _allocationID) external view returns (AllocationState);
+    function getAllocationState(address _allocationID)
+        external
+        view
+        returns (AllocationState);
 
     function isAllocation(address _allocationID) external view returns (bool);
 
@@ -231,7 +257,10 @@ interface IStaking is IStakingData {
         view
         returns (Delegation memory);
 
-    function isDelegator(address _indexer, address _delegator) external view returns (bool);
+    function isDelegator(address _indexer, address _delegator)
+        external
+        view
+        returns (bool);
 }
 
 pragma abicoder v2;
@@ -1081,4 +1110,3 @@ contract SubgraphBridgeManager is SubgraphBridgeManagerHelpers {
         return keccak256(bytes.concat(firstChunk, blockHash, lastChunk));
     }
 }
-

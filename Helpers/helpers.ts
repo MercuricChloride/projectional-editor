@@ -1,6 +1,7 @@
 import { ContractDefinition, FunctionDefinition } from "@solidity-parser/parser/dist/src/ast-types";
 import { ElkNode } from "elkjs";
 import ELK from "elkjs/lib/elk.bundled.js";
+import { Edge } from "reactflow";
 const elk = new ELK();
 
 // These are helper functions meant to play nice with the visitor pattern
@@ -19,7 +20,7 @@ export interface INode {
     y: number;
   };
   type: string;
-  data?: any;
+  data: any;
   loc?: {
     start: {
       line: number;
@@ -56,6 +57,7 @@ export function defaultINode(): INode {
     position: { x: 0, y: 0 },
     width: DEFAULT_NODE_WIDTH,
     height: DEFAULT_NODE_HEIGHT,
+    data: {},
   };
 }
 
@@ -143,7 +145,7 @@ export function getNodeId(ranges: ScopeRange[], target: number) {
   } , ''); // reduce the array to a string for the ID
 }
 
-export async function formatNodes(nodes: INode[]): Promise<[INode[], any[]]> {
+export async function formatNodes(nodes: INode[]): Promise<[INode[], Edge[]]> {
   const edges = nodes
   .filter((node: any) => node.id.includes('-')) // filter out the contract nodes
   .map((node: any, index: number) => {
@@ -173,8 +175,6 @@ export async function formatNodes(nodes: INode[]): Promise<[INode[], any[]]> {
      'elk.algorithm': DEFAULT_GRAPH_TYPE,
     },
   });
-
-  console.log('layout', layout);
 
   const nodesWithPosition = layout.children?.map((node: any) => {
     const { x, y } = node;

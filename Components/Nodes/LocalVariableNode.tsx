@@ -5,8 +5,8 @@ export function LocalVariableNode({ data }: any) {
     <div className="rounded-full bg-blue-200 p-3">
       <Handle
         type="target"
-        position={Position.Top}
-        style={{ background: "#555" }}
+        position={Position.Left}
+        style={{ background: "#555", left: "50%" }}
       />
       <div className="text-center">Local Variable:</div>
       <div className="text-center">{data.label}</div>

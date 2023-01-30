@@ -1,5 +1,4 @@
-import Flow from "@/pages/flow";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ContractNode } from "./ContractNode";
 import { FunctionNode } from "./FunctionNode";
 import { LocalVariableNode } from "./LocalVariableNode";
@@ -19,8 +18,16 @@ import {
   DEFAULT_NODE_HEIGHT,
   DEFAULT_NODE_WIDTH,
   formatNodes,
-  getScopeRange,
 } from "@/Helpers/helpers";
+import ReactFlow, {
+  addEdge,
+  Background,
+  Controls,
+  MiniMap,
+  useEdgesState,
+  useNodesState,
+} from "reactflow";
+import Flow from "@/pages/flow";
 
 export default function EditorInterface() {
   const [text, setText] = useState(`\
@@ -44,8 +51,12 @@ contract Test2 {
   uint public num;
 }`);
 
-  const [nodes, setNodes] = useState<any[]>([]);
-  const [edges, setEdges] = useState<any[]>([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const onConnect = useCallback(
+    (params: any) => setEdges((eds) => addEdge(params, eds)),
+    [setEdges]
+  );
 
   const [detailLevel, setDetailLevel] = useState(3);
   const [nodeTypesToRemove, setNodeTypesToRemove] = useState<string[]>();
@@ -122,10 +133,15 @@ contract Test2 {
 
       console.log("rawNodes", rawNodes);
 
-      const [nodes, edges] = await formatNodes(rawNodes);
+      const [nodes, edges] = await formatNodes(
+        rawNodes
+        // const [nodes, edges] = await formatNodes(
+        // rawNodes.filter((node) => node.id.split("-").length <= detailLevel)
+      );
       setNodes(
         nodes.filter((node) => node.id.split("-").length <= detailLevel)
       );
+      console.log("edges", edges);
       setEdges(edges);
     }
   }
@@ -192,11 +208,20 @@ contract Test2 {
             name="UNIQUE_ID_OF_DIV"
             editorProps={{ $blockScrolling: true }}
             height="100%"
+            width="100%"
+            fontSize={16}
           />
         </div>
       </div>
       <div className="h-full w-1/2 flex justify-center">
-        <Flow defaultNodes={nodes} defaultEdges={edges} nodeTypes={nodeTypes} />
+        <Flow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+        />
       </div>
     </div>
   );

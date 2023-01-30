@@ -5,14 +5,8 @@ import { INode, ScopeRange } from "./helpers";
 // This is a query to grab all of the relevant scopes of the contract.
 export function contractGoodies(language: Parser.Language): Query {
   return language.query(`
-    (contract_declaration 
-      name: (identifier) @contract_name
-      body: (contract_body
-        (function_definition 
-          name: (identifier) @function_name
-          )*
-      )
-    )
+    (contract_declaration name: (identifier) @contract_name)
+    (function_definition name: (identifier) @function_name)
     (state_variable_declaration name: (identifier) @state_variable)
     (variable_declaration name: (identifier) @local_variable)
   `);
@@ -42,6 +36,7 @@ const moreGoodies = `
 
 
 // @note this is not the most performant way to do this, but it is readable and easy to understand
+// @todo add support for inline block statements in functions
 function isScopeName(name: string): boolean {
   return [ 
     'contract_name',
@@ -128,9 +123,13 @@ export function goodiesToINodes(goodies: Parser.QueryMatch, width: number, heigh
   // const scopeRanges = captureToScopeRange(captures);
 
   return captures.map((capture) => {
+    const id = getCaptureId(capture, scopeRanges);
+    // depth is the number of scopes that the capture is nested in
+    // const depth = id.split('-').length;
+    const type = getCaptureType(capture);
     return {
-      id: getCaptureId(capture, scopeRanges),
-      type: getCaptureType(capture),
+      id,
+      type,
       position: { x: 0, y: 0 },
       data: {
         label: capture.node.text,
@@ -138,6 +137,8 @@ export function goodiesToINodes(goodies: Parser.QueryMatch, width: number, heigh
       },
       width,
       height,
+      // width: width / depth,
+      // height: height / depth,
     };
   })
 }
