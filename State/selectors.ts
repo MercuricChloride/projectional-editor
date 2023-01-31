@@ -2,7 +2,7 @@ import { DEFAULT_NODE_HEIGHT, DEFAULT_NODE_WIDTH, formatNodes, INode } from '@/H
 import { captureToScopeRange, contractGoodies, goodiesToINodes } from '@/Helpers/treeHelpers';
 import { Edge } from 'reactflow';
 import { selector } from 'recoil';
-import { detailLevelState, inputCodeState, nodeState, nodeTypesToRemoveState, parserState } from './atoms';
+import { detailLevelState, edgeState, inputCodeState, nodeState, nodeTypesToRemoveState, parserState } from './atoms';
 
 export const parsedTreeSelector = selector({
   key: 'parsedTree',
@@ -11,7 +11,9 @@ export const parsedTreeSelector = selector({
     const code = get(inputCodeState);
     if(!parser) return undefined;
 
-    return parser.parse(code);
+    const tree = parser.parse(code);
+
+    return tree;
   }
 });
 
@@ -19,10 +21,18 @@ export const displayNodesSelector = selector<[INode[], Edge[]]>({
   key: 'displayNodes',
   get: async ({ get }) => {
     const nodeTypesToRemove = get(nodeTypesToRemoveState);
+    const oldNodes = get(nodeState);
+    const oldEdges = get(edgeState);
     const detailLevel = get(detailLevelState);
     const parsedTree = get(parsedTreeSelector);
     const code = get(inputCodeState);
     if(!parsedTree) return [[], []];
+
+    if(parsedTree.rootNode.hasError()) {
+      console.log("Syntax Error")
+      return [oldNodes, oldEdges]
+    }
+
 
     const language = parsedTree.getLanguage();
 

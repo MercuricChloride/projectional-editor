@@ -17,16 +17,40 @@ export function FunctionNode({ data, id }: any) {
     setSourceCode(newSourceCode.join(""));
   };
 
+  const CodeDisplay = () => {
+    return (
+      <div className="text-center mt-3 bg-white h-32 w-32 z-50 static">
+        Code:
+        <textarea
+          className="w-full h-full"
+          style={{
+            zIndex: 99,
+          }}
+          autoFocus
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          onBlur={() => {
+            if (code !== inputCode) {
+              onCodeChange(code);
+            }
+            setDisplayCode(false);
+          }}
+          onMouseLeave={() => {
+            if (code !== inputCode) {
+              onCodeChange(code);
+            }
+            setDisplayCode(false);
+          }}
+        ></textarea>
+      </div>
+    );
+  };
+
+  // create a css style that animates the node when double clicked, bringing up the code editor and then animates it back down when the mouse leaves the code editor
   return (
     <div
-      className="rounded-full bg-green-500 p-3 max-w-36"
+      className="rounded-full bg-green-500 p-6"
       onDoubleClick={() => setDisplayCode(true)}
-      onMouseLeave={() => {
-        if (code !== inputCode) {
-          onCodeChange(code);
-        }
-        setDisplayCode(false);
-      }}
     >
       <Handle
         type="target"
@@ -34,14 +58,7 @@ export function FunctionNode({ data, id }: any) {
         style={{ background: "#555" }}
       />
       {displayCode ? (
-        <div className="text-center mt-3 bg-white">
-          <div>Code:</div>
-          <textarea
-            autoFocus
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-          ></textarea>
-        </div>
+        <CodeDisplay />
       ) : (
         <>
           <div className="text-center">{data.visibility} Function:</div>
