@@ -26,6 +26,8 @@ import {
   useNodesState,
 } from "reactflow";
 import Flow from "@/pages/flow";
+import { nodeState, edgeState } from "@/State/atoms";
+import { useRecoilState, useRecoilValue } from "recoil";
 
 export default function EditorInterface() {
   const [text, setText] = useState(`\
@@ -49,13 +51,8 @@ contract Test2 {
   uint public num;
 }`);
 
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-
-  const onConnect = useCallback(
-    (params: any) => setEdges((eds) => addEdge(params, eds)),
-    [setEdges]
-  );
+  const [nodes, setNodes] = useRecoilState(nodeState);
+  const [edges, setEdges] = useRecoilState(edgeState);
 
   const [detailLevel, setDetailLevel] = useState(3);
   const [nodeTypesToRemove, setNodeTypesToRemove] = useState<string[]>();
@@ -208,14 +205,7 @@ contract Test2 {
           </div>
         </div>
         <div className="h-full w-1/2 flex justify-center">
-          <Flow
-            nodes={nodes}
-            edges={edges}
-            nodeTypes={nodeTypes}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-          />
+          <Flow />
         </div>
       </ReactFlowProvider>
     </div>

@@ -1,23 +1,40 @@
-import ReactFlow, { MiniMap, Controls, Background, Edge } from "reactflow";
+import { edgeState, nodeState, nodeTypesState } from "@/State/atoms";
+import { useCallback } from "react";
+import ReactFlow, {
+  MiniMap,
+  Controls,
+  Background,
+  NodeChange,
+  applyNodeChanges,
+  applyEdgeChanges,
+  EdgeChange,
+} from "reactflow";
 import "reactflow/dist/style.css";
+import { useRecoilState, useRecoilValue } from "recoil";
 
-interface Props {
-  nodes: any[];
-  edges: Edge[];
-  onNodesChange: any;
-  onEdgesChange: any;
-  onConnect: any;
-  nodeTypes: any;
-}
+export default function Flow() {
+  const [nodes, setNodes] = useRecoilState(nodeState);
+  const [edges, setEdges] = useRecoilState(edgeState);
+  const nodeTypes = useRecoilValue(nodeTypesState);
 
-export default function Flow({
-  nodes,
-  edges,
-  onNodesChange,
-  onEdgesChange,
-  onConnect,
-  nodeTypes,
-}: Props) {
+  const onNodesChange = useCallback(
+    (changes: NodeChange[]) =>
+      // @ts-ignore
+      setNodes((nds) => applyNodeChanges(changes, nds)),
+    [setNodes]
+  );
+  const onEdgesChange = useCallback(
+    (changes: EdgeChange[]) =>
+      setEdges((eds) => applyEdgeChanges(changes, eds)),
+    [setEdges]
+  );
+
+  const onConnect = useCallback(
+    //@ts-ignore
+    (params: any) => setEdges((eds) => addEdge(params, eds)),
+    [setEdges]
+  );
+
   return (
     <ReactFlow
       nodes={nodes}
