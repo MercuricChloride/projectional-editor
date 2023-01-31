@@ -4,8 +4,8 @@ import { LocalVariableNode } from "@/Components/Nodes/LocalVariableNode";
 import { StateVariableNode } from "@/Components/Nodes/StateVariableNode";
 import { INode } from "@/Helpers/helpers";
 import { atom } from "recoil";
-import Parser from "web-tree-sitter";
 import { Edge } from "reactflow";
+import Parser from "web-tree-sitter";
 
 export const nodeState = atom<INode[]>({
   key: 'nodeState',
@@ -27,7 +27,12 @@ export const nodeTypesState = atom({
   },
 });
 
-export const nodeTypesToRemoveState = atom<String[]>({
+export const detailLevelState = atom({
+  key: 'detailLevel',
+  default: 3,
+});
+
+export const nodeTypesToRemoveState = atom<string[]>({
   key: 'nodeTypesToRemove',
   default: [],
 });

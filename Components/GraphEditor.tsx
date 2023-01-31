@@ -1,5 +1,6 @@
 import { edgeState, nodeState, nodeTypesState } from "@/State/atoms";
-import { useCallback } from "react";
+import { displayNodesSelector } from "@/State/selectors";
+import { Suspense, useCallback } from "react";
 import ReactFlow, {
   MiniMap,
   Controls,
@@ -11,11 +12,14 @@ import ReactFlow, {
   addEdge,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import { useRecoilState, useRecoilValue } from "recoil";
+import { useRecoilState, useRecoilValue, useRecoilValueLoadable } from "recoil";
 
-export default function Flow() {
-  const [nodes, setNodes] = useRecoilState(nodeState);
-  const [edges, setEdges] = useRecoilState(edgeState);
+export function GraphEditor() {
+  //@note I am using a seperate selector here because I want to filter out nodes when we display, and don't want to filter the nodes in the state object
+  //@note this returns [nodes, edges]
+  const display = useRecoilValueLoadable(displayNodesSelector);
+  const [, setNodes] = useRecoilState(nodeState);
+  const [, setEdges] = useRecoilState(edgeState);
   const nodeTypes = useRecoilValue(nodeTypesState);
 
   const onNodesChange = useCallback(
@@ -38,8 +42,8 @@ export default function Flow() {
 
   return (
     <ReactFlow
-      nodes={nodes}
-      edges={edges}
+      nodes={display.state === "hasValue" ? display.contents[0] : []}
+      edges={display.state === "hasValue" ? display.contents[1] : []}
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
       nodeTypes={nodeTypes}
