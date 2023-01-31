@@ -21,6 +21,7 @@ export const displayNodesSelector = selector<[INode[], Edge[]]>({
     const nodeTypesToRemove = get(nodeTypesToRemoveState);
     const detailLevel = get(detailLevelState);
     const parsedTree = get(parsedTreeSelector);
+    const code = get(inputCodeState);
     if(!parsedTree) return [[], []];
 
     const language = parsedTree.getLanguage();
@@ -43,7 +44,8 @@ export const displayNodesSelector = selector<[INode[], Edge[]]>({
         goodie,
         DEFAULT_NODE_HEIGHT,
         DEFAULT_NODE_WIDTH,
-        scopeRange
+        scopeRange,
+        code
       );
     });
 

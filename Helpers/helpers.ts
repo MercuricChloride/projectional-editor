@@ -176,6 +176,7 @@ export async function formatNodes(nodes: INode[]): Promise<[INode[], Edge[]]> {
     },
   });
 
+
   const nodesWithPosition = layout.children?.map((node: any) => {
     const { x, y } = node;
     const newNode = {

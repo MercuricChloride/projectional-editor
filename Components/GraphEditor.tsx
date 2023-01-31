@@ -16,8 +16,15 @@ import { useRecoilState, useRecoilValue, useRecoilValueLoadable } from "recoil";
 
 export function GraphEditor() {
   //@note I am using a seperate selector here because I want to filter out nodes when we display, and don't want to filter the nodes in the state object
-  //@note this returns [nodes, edges]
+  //@note this returns Loadable<[nodes, edges]>
   const display = useRecoilValueLoadable(displayNodesSelector);
+
+  const [nodes, edges] = display.state === "hasValue" ? display.contents : [];
+
+  if (display.state === "hasError") {
+    console.error(display.contents);
+  }
+
   const [, setNodes] = useRecoilState(nodeState);
   const [, setEdges] = useRecoilState(edgeState);
   const nodeTypes = useRecoilValue(nodeTypesState);
@@ -42,8 +49,8 @@ export function GraphEditor() {
 
   return (
     <ReactFlow
-      nodes={display.state === "hasValue" ? display.contents[0] : []}
-      edges={display.state === "hasValue" ? display.contents[1] : []}
+      nodes={nodes}
+      edges={edges}
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
       nodeTypes={nodeTypes}

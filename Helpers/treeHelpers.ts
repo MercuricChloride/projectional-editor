@@ -1,22 +1,30 @@
+import { nodeModuleNameResolver } from "typescript";
 import Parser, { Query } from "web-tree-sitter";
 import { INode, ScopeRange } from "./helpers";
 
 // This is a query to grab all of the relevant scopes of the contract.
 export function contractGoodies(language: Parser.Language): Query {
   return language.query(`
-    (contract_declaration name: (identifier) @contract_name)
-    (function_definition name: (identifier) @function_name)
-    (state_variable_declaration name: (identifier) @state_variable)
-    (variable_declaration name: (identifier) @local_variable)
+    (contract_declaration) @contract
+    (function_definition) @function
+    (state_variable_declaration name: (identifier) @stateVariable)
+    (variable_declaration name: (identifier) @localVariable)
   `);
 }
 
+type CaptureName = 
+'contract' 
+| 'function'
+| 'stateVariable' 
+| 'localVariable' 
+
 // @note this is not the most performant way to do this, but it is readable and easy to understand
+// @note this function checks if the name of the capture is a capture that has a scope associated with it
 // @todo add support for inline block statements in functions
-function isScopeName(name: string): boolean {
+function isScopeName(name: CaptureName): boolean {
   return [ 
-    'contract_name',
-    'function_name',
+    'contract',
+    'function',
   ].includes(name);
 }
 
@@ -26,22 +34,29 @@ export function captureToScopeRange(captures: Parser.QueryCapture[]): ScopeRange
   return captures
   .flatMap((capture) => {
     const { name, node } = capture;
-    // if it is a scope name, we want to get the body of the contract or function or whatever
-    if(isScopeName(name)) {
-      let body = node.nextNamedSibling;
-      // since we are operating on the name, we need to walk along the named siblings until we find a body
-      while (!body?.type.includes("_body")) {
-        if(!body) {
-          console.error('no body found for: ', node.text)
-          return [];
-        }
-        body = body.nextNamedSibling
-      }
+
+    if(isScopeName(name as CaptureName)) {
+      const name = node.childForFieldName("name")?.text;
+      const body = 
+      node.childForFieldName("body")
+      ?? node.childForFieldName("contract_body")
+      
+      console.log("NODE", node)
+      console.log("NAME", name)
+      console.log("BODY", body)
+
+      if(body === null || !name) {
+        console.error('No body or no name for ', node)
+        return [];
+      };
 
       return [{
-        start: body.startIndex,
-        end: body.endIndex,
-        name: capture.node.text
+        // start: body.startIndex,
+        start: node.startIndex,
+        // end: body.endIndex,
+        end: node.endIndex,
+        // name: capture.node.text
+        name
         }];
     } else {
       return [];
@@ -49,72 +64,78 @@ export function captureToScopeRange(captures: Parser.QueryCapture[]): ScopeRange
   });
 }
 
+function getCaptureDisplayLabel(capture: Parser.QueryCapture) {
+  const { name, node } = capture;
+  if(isScopeName(name as CaptureName)) {
+    const nameNode = node.childForFieldName('name');
+    if(!nameNode) {
+      console.error('No name node for ', node)
+      return '';
+    }
+    return nameNode.text;
+  } else {
+    return node.text;
+  }
+}
 
 function getCaptureId(capture: Parser.QueryCapture, scopeRanges: ScopeRange[] ) {
   const { node } = capture;
   const { startIndex, endIndex } = node;
+
+  const name = isScopeName(capture.name as CaptureName)
+   ? node.childForFieldName('name')?.text 
+   : node.text;
+
+  const isNestedScope = (scope: ScopeRange) => {
+    return scope.start <= startIndex && scope.end >= endIndex && scope.name !== name;
+  }
+
   const prefix = scopeRanges.reduce((acc, scope) => {
     // we are iterating over the scopes to find all of the scopes that contain the capture
-    if(scope.start <= startIndex && scope.end >= endIndex) {
+    if(isNestedScope(scope)) {
       return `${scope.name}-${acc}`
     } else {
       return acc;
     }
   }, '');
 
-  return `${prefix}${node.text}`;
+  return `${prefix}${name}`;
 }
 
-type CaptureType = 
-'contract' 
-| 'function'
-| 'stateVariable' 
-| 'localVariable' 
-
-function getCaptureType(capture: Parser.QueryCapture): CaptureType | 'unknown' {
-  switch(capture.name) {
-    case "contract_name":
-      return "contract";
-    case "state_variable":
-      return "stateVariable"
-    case "local_variable":
-      return "localVariable";
-    case "function_name":
-      return "function";
-    default:
-      return "unknown";
-  }
-}
 
 // this function should take in the goodies from the contractGoodies query
 // and return an array of INodes
 // This should be 
 // @note I want to make this function return a flat data type so that it is more flexible
-export function goodiesToINodes(goodies: Parser.QueryMatch, width: number, height: number, scopeRanges: ScopeRange[]): INode[] {
+export function goodiesToINodes(goodies: Parser.QueryMatch, width: number, height: number, scopeRanges: ScopeRange[], sourceCode: string): INode[] {
 
   const {captures} = goodies;
-  
-  // captures.sort((a, b) => a.node.startIndex - b.node.startIndex);
-
-  // const scopeRanges = captureToScopeRange(captures);
 
   return captures.map((capture) => {
     const id = getCaptureId(capture, scopeRanges);
-    // depth is the number of scopes that the capture is nested in
-    // const depth = id.split('-').length;
-    const type = getCaptureType(capture);
+    const displayLabel = getCaptureDisplayLabel(capture);
+    //@note probably need a better name for this. But this is the syntax node that we want to display in the code editor
+    const codeNode = isScopeName(capture.name as CaptureName) ? capture.node.childForFieldName('body') : capture.node;
     return {
       id,
-      type,
+      type: capture.name,
       position: { x: 0, y: 0 },
       data: {
-        label: capture.node.text,
+        label: displayLabel,
+        code: codeNode?.text,
+        range: {
+          start: codeNode?.startIndex,
+          end: codeNode?.endIndex,
+        },
         visibility: '',
       },
       width,
       height,
+    };
+    //@todo check out the depth sizing later
+    // depth is the number of scopes that the capture is nested in
+    // const depth = id.split('-').length;
       // width: width / depth,
       // height: height / depth,
-    };
   })
 }

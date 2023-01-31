@@ -1,24 +1,32 @@
+import { inputCodeState } from "@/State/atoms";
 import { useRef, useState } from "react";
 import { Handle, Position } from "reactflow";
+import { useRecoilState } from "recoil";
 
-export function FunctionNode({ data }: any) {
+export function FunctionNode({ data, id }: any) {
+  const { label, code: inputCode, range } = data;
   const [displayCode, setDisplayCode] = useState(false);
-  const [code, setCode] = useState(data.code);
+  const [code, setCode] = useState(inputCode);
+  const [sourceCode, setSourceCode] = useRecoilState(inputCodeState);
 
-  // pseudo code for how to update the node data
-  // const setNode = useReactFlow();
-  // const onCodeChange = (newCode: string) => {
-  //  setCode(newCode);
-  //  setNode((node) => {
-  //   node.data.code = newCode;
-  //   return node;
-  // });
+  const onCodeChange = (code: string) => {
+    const newSourceCode = sourceCode.split("");
+    const { start, end } = range;
+    console.log("updating");
+    newSourceCode.splice(start, end - start, code);
+    setSourceCode(newSourceCode.join(""));
+  };
 
   return (
     <div
       className="rounded-full bg-green-500 p-3 max-w-36"
       onDoubleClick={() => setDisplayCode(true)}
-      onMouseLeave={() => setDisplayCode(false)}
+      onMouseLeave={() => {
+        if (code !== inputCode) {
+          onCodeChange(code);
+        }
+        setDisplayCode(false);
+      }}
     >
       <Handle
         type="target"
@@ -30,13 +38,9 @@ export function FunctionNode({ data }: any) {
           <div>Code:</div>
           <textarea
             autoFocus
-            onBlur={(e) => {
-              setCode(e.target.value);
-              setDisplayCode(false);
-            }}
-          >
-            {data.code}
-          </textarea>
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+          ></textarea>
         </div>
       ) : (
         <>
