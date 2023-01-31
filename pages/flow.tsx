@@ -1,13 +1,4 @@
-import { useCallback } from "react";
-import ReactFlow, {
-  MiniMap,
-  Controls,
-  Background,
-  useNodesState,
-  useEdgesState,
-  addEdge,
-  Edge,
-} from "reactflow";
+import ReactFlow, { MiniMap, Controls, Background, Edge } from "reactflow";
 import "reactflow/dist/style.css";
 
 interface Props {
@@ -19,7 +10,6 @@ interface Props {
   nodeTypes: any;
 }
 
-// export default function Flow({ defaultNodes, defaultEdges, nodeTypes }: Props) {
 export default function Flow({
   nodes,
   edges,

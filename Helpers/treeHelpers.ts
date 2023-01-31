@@ -1,5 +1,4 @@
 import Parser, { Query } from "web-tree-sitter";
-import { ElkNode } from "elkjs";
 import { INode, ScopeRange } from "./helpers";
 
 // This is a query to grab all of the relevant scopes of the contract.
@@ -12,29 +11,6 @@ export function contractGoodies(language: Parser.Language): Query {
   `);
 }
 
-// this is a query to grab everything. It's just here for reference for now.
-const moreGoodies = `
-(contract_declaration
-  name: (identifier) @contract_name
-  body: (contract_body
-          ;; capture functions
-          (function_definition
-            function_name: (identifier)* @function_name
-            body: (function_body
-                    (expression_statement
-                      ;;capture variable assignments
-                      (assignment_expression)* @variable_assignment)
-                    )* @function_body)*
-
-          ;; capture state variables
-          ;; note the * at the end of the s-exp, we don't want to restrict our parsing to contracts that don't contain somenthing
-          (state_variable_declaration
-            name: (identifier) @variable_name)*
-          ))`
-
-
-
-
 // @note this is not the most performant way to do this, but it is readable and easy to understand
 // @todo add support for inline block statements in functions
 function isScopeName(name: string): boolean {
@@ -45,7 +21,7 @@ function isScopeName(name: string): boolean {
 }
 
 //@note the input list of captures should only be for a single contract so this should be fine so we won't have weird collisions or sorting issues or anything
-//@note why am I using flatmap? because I want to filter out the non-scope names
+//@note I am using flatmap because I want to filter out the non-scope names with type inference. Filter doesn't work with type inference.
 export function captureToScopeRange(captures: Parser.QueryCapture[]): ScopeRange[] {
   return captures
   .flatMap((capture) => {
@@ -141,48 +117,4 @@ export function goodiesToINodes(goodies: Parser.QueryMatch, width: number, heigh
       // height: height / depth,
     };
   })
-}
-
-// THESE ARE THE OLD FUNCTIONS THAT I'M KEEPING AROUND FOR REFERENCE
-//--------------------------------------------------------------
-
-export function goodiesToElkNode(goodies: Parser.QueryMatch, width: number, height: number): ElkNode {
-  const captures = goodies.captures.reduce((acc, capture) => {
-    if(acc[capture.name]){
-      acc[capture.name].push(capture)
-    } else {
-      acc[capture.name] = [capture]
-    }
-    return acc;
-  }, {} as { [key: string]: Parser.QueryCapture[] })
-
-  const contractName = captures.contract_name[0].node.text;
-
-  const contractNode = {
-    id: contractName,
-    labels: [{ text: contractName }],
-    children:<ElkNode[]> [],
-    width,
-    height,
-  };
-
-  captures.state_variable.forEach((variable) => {
-    contractNode.children.push({
-      id: `${contractName}-${variable.node.text}`,
-      labels: [{ text: variable.node.text }],
-      width,
-      height,
-    });
-  });
-
- captures.function_name.forEach((func) => {
-    contractNode.children.push({
-      id: `${contractName}-${func.node.text}`,
-      labels: [{ text: func.node.text }],
-      width,
-      height,
-    });
-  });
-
-  return contractNode;
 }

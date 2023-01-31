@@ -19,11 +19,9 @@ import {
   DEFAULT_NODE_WIDTH,
   formatNodes,
 } from "@/Helpers/helpers";
-import ReactFlow, {
+import {
   addEdge,
-  Background,
-  Controls,
-  MiniMap,
+  ReactFlowProvider,
   useEdgesState,
   useNodesState,
 } from "reactflow";
@@ -53,6 +51,7 @@ contract Test2 {
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+
   const onConnect = useCallback(
     (params: any) => setEdges((eds) => addEdge(params, eds)),
     [setEdges]
@@ -146,77 +145,79 @@ contract Test2 {
 
   return (
     <div className="h-screen w-screen flex">
-      <div className="h-full w-1/2 flex justify-center">
-        <div className="flex flex-col h-full w-full justify-flex-start">
-          <div className="flex bg-slate-200 border-black border-2 justify-around">
-            <div className="flex flex-col">
-              Types to show:
-              {Object.keys(nodeTypes).map((nodeType) => (
-                <div className="flex flex-row" key={nodeType}>
-                  <input
-                    type="checkbox"
-                    checked={!nodeTypesToRemove?.includes(nodeType)}
-                    onChange={(e) => {
-                      if (!e.target.checked) {
-                        setNodeTypesToRemove([
-                          ...(nodeTypesToRemove || []),
-                          nodeType,
-                        ]);
-                      } else {
-                        setNodeTypesToRemove(
-                          nodeTypesToRemove?.filter((t) => t !== nodeType)
-                        );
-                      }
-                    }}
-                  />
-                  <label>{nodeType}</label>
-                </div>
-              ))}
+      <ReactFlowProvider>
+        <div className="h-full w-1/2 flex justify-center">
+          <div className="flex flex-col h-full w-full justify-flex-start">
+            <div className="flex bg-slate-200 border-black border-2 justify-around">
+              <div className="flex flex-col">
+                Types to show:
+                {Object.keys(nodeTypes).map((nodeType) => (
+                  <div className="flex flex-row" key={nodeType}>
+                    <input
+                      type="checkbox"
+                      checked={!nodeTypesToRemove?.includes(nodeType)}
+                      onChange={(e) => {
+                        if (!e.target.checked) {
+                          setNodeTypesToRemove([
+                            ...(nodeTypesToRemove || []),
+                            nodeType,
+                          ]);
+                        } else {
+                          setNodeTypesToRemove(
+                            nodeTypesToRemove?.filter((t) => t !== nodeType)
+                          );
+                        }
+                      }}
+                    />
+                    <label>{nodeType}</label>
+                  </div>
+                ))}
+              </div>
+              <div className="flex flex-col w-3/12 justify-around">
+                <button
+                  className="bg-slate-400 rounded-full"
+                  onClick={() => {
+                    setDetailLevel(detailLevel + 1);
+                  }}
+                >
+                  Increase Detail
+                </button>
+                Detail Level: {detailLevel}
+                <button
+                  className="bg-slate-400 rounded-full"
+                  onClick={() => {
+                    setDetailLevel(detailLevel - 1);
+                  }}
+                >
+                  Decrease Detail
+                </button>
+              </div>
             </div>
-            <div className="flex flex-col w-3/12 justify-around">
-              <button
-                className="bg-slate-400 rounded-full"
-                onClick={() => {
-                  setDetailLevel(detailLevel + 1);
-                }}
-              >
-                Increase Detail
-              </button>
-              Detail Level: {detailLevel}
-              <button
-                className="bg-slate-400 rounded-full"
-                onClick={() => {
-                  setDetailLevel(detailLevel - 1);
-                }}
-              >
-                Decrease Detail
-              </button>
-            </div>
+            <AceEditor
+              mode="java"
+              value={text}
+              onChange={(code) => {
+                setText(code);
+              }}
+              name="UNIQUE_ID_OF_DIV"
+              editorProps={{ $blockScrolling: true }}
+              height="100%"
+              width="100%"
+              fontSize={16}
+            />
           </div>
-          <AceEditor
-            mode="java"
-            value={text}
-            onChange={(code) => {
-              setText(code);
-            }}
-            name="UNIQUE_ID_OF_DIV"
-            editorProps={{ $blockScrolling: true }}
-            height="100%"
-            width="100%"
-            fontSize={16}
+        </div>
+        <div className="h-full w-1/2 flex justify-center">
+          <Flow
+            nodes={nodes}
+            edges={edges}
+            nodeTypes={nodeTypes}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
           />
         </div>
-      </div>
-      <div className="h-full w-1/2 flex justify-center">
-        <Flow
-          nodes={nodes}
-          edges={edges}
-          nodeTypes={nodeTypes}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-        />
-      </div>
+      </ReactFlowProvider>
     </div>
   );
 }
