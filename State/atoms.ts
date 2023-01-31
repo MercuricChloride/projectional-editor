@@ -27,19 +27,36 @@ export const nodeTypesState = atom({
   },
 });
 
-export const parser = atom({
+export const nodeTypesToRemoveState = atom<String[]>({
+  key: 'nodeTypesToRemove',
+  default: [],
+});
+
+export const parserState = atom<Parser>({
   key: 'parser',
-  default: async() => {
-    await Parser.init({
-      locateFile(scriptName: string, scriptDirectory: string) {
-        return scriptName;
-      },
-    });
-    const Solidity = await Parser.Language.load("tree-sitter-solidity.wasm");
+  default: undefined
+});
 
-    const parser = new Parser();
+export const inputCodeState = atom<string>({
+  key: 'inputCode',
+  default: `\
+contract Test {
+  uint public num;
+  
+  uint public num2;
+  
+  string private secretStr;
 
-    parser.setLanguage(Solidity);
-    return parser;
+
+  function test() public { 
+    num = 69;
   }
+
+  function shouldHaveLocal() public {
+    uint local;
+  }
+}
+contract Test2 {
+  uint public num;
+}`,
 });

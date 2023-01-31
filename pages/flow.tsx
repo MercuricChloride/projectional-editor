@@ -8,6 +8,7 @@ import ReactFlow, {
   applyNodeChanges,
   applyEdgeChanges,
   EdgeChange,
+  addEdge,
 } from "reactflow";
 import "reactflow/dist/style.css";
 import { useRecoilState, useRecoilValue } from "recoil";
@@ -23,6 +24,7 @@ export default function Flow() {
       setNodes((nds) => applyNodeChanges(changes, nds)),
     [setNodes]
   );
+
   const onEdgesChange = useCallback(
     (changes: EdgeChange[]) =>
       setEdges((eds) => applyEdgeChanges(changes, eds)),
@@ -30,7 +32,6 @@ export default function Flow() {
   );
 
   const onConnect = useCallback(
-    //@ts-ignore
     (params: any) => setEdges((eds) => addEdge(params, eds)),
     [setEdges]
   );
