@@ -2,7 +2,7 @@ import { Handle, Position } from "reactflow";
 
 export function LocalVariableNode({ data }: any) {
   return (
-    <div className="rounded-full bg-blue-200 p-3">
+    <div className="rounded-full bg-blue-200 p-3 z-0">
       <Handle
         type="target"
         position={Position.Top}

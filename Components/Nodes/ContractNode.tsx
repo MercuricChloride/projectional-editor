@@ -2,7 +2,7 @@ import { Handle, Position } from "reactflow";
 
 export function ContractNode({ data }: any) {
   return (
-    <div className="rounded-full bg-gray-500 p-3">
+    <div className="rounded-full bg-gray-500 p-3 z-0">
       <Handle
         type="target"
         position={Position.Top}

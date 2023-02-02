@@ -41,10 +41,6 @@ export function captureToScopeRange(captures: Parser.QueryCapture[]): ScopeRange
       node.childForFieldName("body")
       ?? node.childForFieldName("contract_body")
       
-      console.log("NODE", node)
-      console.log("NAME", name)
-      console.log("BODY", body)
-
       if(body === null || !name) {
         console.error('No body or no name for ', node)
         return [];

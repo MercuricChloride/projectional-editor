@@ -1,56 +1,73 @@
-import { inputCodeState } from "@/State/atoms";
+import { inputCodeState, nodeState, parserState } from "@/State/atoms";
+import { use, useEffect } from "react";
 import { useRef, useState } from "react";
 import { Handle, Position } from "reactflow";
-import { useRecoilState } from "recoil";
+import { useRecoilState, useRecoilValue } from "recoil";
+import AceEditor from "react-ace";
 
 export function FunctionNode({ data, id }: any) {
-  const { label, code: inputCode, range } = data;
+  const { label, code: inputCode, range: inputRange } = data;
   const [displayCode, setDisplayCode] = useState(false);
-  const [code, setCode] = useState(inputCode);
   const [sourceCode, setSourceCode] = useRecoilState(inputCodeState);
+  const [nodes, setNodes] = useRecoilState(nodeState);
+  const parser = useRecoilValue(parserState);
+  const ref = useRef<HTMLTextAreaElement>(null);
+
+  const [range, setRange] = useState(inputRange);
 
   const onCodeChange = (code: string) => {
-    const newSourceCode = sourceCode.split("");
+    // split the source code into an array
+    const splitSource = sourceCode.split("");
+
+    // get the start and end points for the source code snippet we are editing
     const { start, end } = range;
-    console.log("updating");
-    newSourceCode.splice(start, end - start, code);
-    setSourceCode(newSourceCode.join(""));
+
+    // splice the new code into the source code
+    splitSource.splice(start, end - start, code);
+
+    // join the array back into a string
+    const newSourceCode = splitSource.join("");
+
+    // update the source code state
+    const newNodes = () => {
+      return nodes.map((node) => {
+        if (node.id === id) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              code,
+            },
+          };
+        } else {
+          return node;
+        }
+      });
+    };
+
+    // update the range state to match this new code
+    setRange({
+      start,
+      end: start + code.length,
+    });
+
+    setNodes(newNodes());
+    setSourceCode(newSourceCode);
   };
 
-  const CodeDisplay = () => {
-    return (
-      <div className="text-center mt-3 bg-white h-32 w-32 z-50 static">
-        Code:
-        <textarea
-          className="w-full h-full"
-          style={{
-            zIndex: 99,
-          }}
-          autoFocus
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          onBlur={() => {
-            if (code !== inputCode) {
-              onCodeChange(code);
-            }
-            setDisplayCode(false);
-          }}
-          onMouseLeave={() => {
-            if (code !== inputCode) {
-              onCodeChange(code);
-            }
-            setDisplayCode(false);
-          }}
-        ></textarea>
-      </div>
-    );
-  };
+  const [code, setCode] = useState(inputCode);
 
-  // create a css style that animates the node when double clicked, bringing up the code editor and then animates it back down when the mouse leaves the code editor
+  useEffect(() => {
+    if (displayCode) {
+      ref.current?.focus();
+    }
+  }, [displayCode]);
+
   return (
     <div
-      className="rounded-full bg-green-500 p-6"
+      className="rounded-full bg-green-500 p-6 z-0"
       onDoubleClick={() => setDisplayCode(true)}
+      onMouseLeave={() => setDisplayCode(false)}
     >
       <Handle
         type="target"
@@ -58,8 +75,34 @@ export function FunctionNode({ data, id }: any) {
         style={{ background: "#555" }}
       />
       {displayCode ? (
-        <CodeDisplay />
+        // <div
+        //   style={{
+        //     position: "absolute",
+        //     zIndex: 100,
+        //     width: "300px",
+        //     height: "300px",
+        //   }}
+        //   hidden={!displayCode}
+        // >
+        //   Code:
+        <textarea
+          hidden={!displayCode}
+          ref={ref}
+          style={{
+            display: "absolute",
+            width: "300px",
+            height: "300px",
+            zIndex: 100,
+          }}
+          rows={code.split("\n").length}
+          onMouseLeave={() => {
+            onCodeChange(code);
+          }}
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+        ></textarea>
       ) : (
+        // </div>
         <>
           <div className="text-center">{data.visibility} Function:</div>
           <div className="text-center">{data.label}</div>
