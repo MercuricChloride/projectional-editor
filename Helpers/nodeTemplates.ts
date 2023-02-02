@@ -1,8 +1,5 @@
 import { SyntaxNode } from "web-tree-sitter";
 
-// export function syntaxNodeToSourceCode(node: SyntaxNode): string {)
-// }
-
 export function defaultNodeName(node: SyntaxNode): string {
   switch(node.type) {
     case 'contract_definition':

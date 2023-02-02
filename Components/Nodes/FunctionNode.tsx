@@ -3,7 +3,6 @@ import { use, useEffect } from "react";
 import { useRef, useState } from "react";
 import { Handle, Position } from "reactflow";
 import { useRecoilState, useRecoilValue } from "recoil";
-import AceEditor from "react-ace";
 
 export function FunctionNode({ data, id }: any) {
   const { label, code: inputCode, range: inputRange } = data;
@@ -88,8 +87,22 @@ export function FunctionNode({ data, id }: any) {
         <textarea
           hidden={!displayCode}
           ref={ref}
+          onKeyDown={(e) => {
+            if (e.key === "Tab") {
+              e.preventDefault();
+              if (!ref.current) return;
+              if (!ref.current?.value) return;
+              const start = ref.current?.selectionStart;
+              const end = ref.current?.selectionEnd;
+              const value = ref.current?.value;
+              const before = value?.substring(0, start);
+              const after = value?.substring(end);
+              ref.current.value = before + "\t" + after;
+              ref.current.selectionStart = ref.current.selectionEnd = start + 1;
+            }
+          }}
           style={{
-            display: "absolute",
+            // display: "absolute",
             width: "300px",
             height: "300px",
             zIndex: 100,

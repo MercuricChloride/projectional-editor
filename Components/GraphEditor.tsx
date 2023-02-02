@@ -55,6 +55,10 @@ export function GraphEditor() {
       onEdgesChange={onEdgesChange}
       nodeTypes={nodeTypes}
       onConnect={onConnect}
+      onContextMenu={(event) => {
+        event.preventDefault();
+        console.log("context menu", event);
+      }}
     >
       <MiniMap />
       <Controls />
