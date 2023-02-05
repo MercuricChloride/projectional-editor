@@ -1,28 +1,16 @@
 import { useEffect } from "react";
 import Parser from "web-tree-sitter";
-import {
-  captureToScopeRange,
-  contractGoodies,
-  goodiesToINodes,
-} from "@/Helpers/treeHelpers";
-import {
-  DEFAULT_NODE_HEIGHT,
-  DEFAULT_NODE_WIDTH,
-  formatNodes,
-} from "@/Helpers/helpers";
-import {
-  nodeState,
-  edgeState,
-  parserState,
-  detailLevelState,
-} from "@/State/atoms";
-import { parsedTreeSelector } from "@/State/selectors";
-import { useRecoilState, useRecoilValue } from "recoil";
+import { parserState, shouldDisplayEditorState } from "@/State/atoms";
+import { useRecoilState } from "recoil";
 import { TextEditor } from "./TextEditor";
 import { GraphEditor } from "@/Components/GraphEditor";
+import { FloatingTextEditor } from "./FloatingTextEditor";
 
 export default function EditorInterface() {
   const [, setParser] = useRecoilState(parserState);
+  const [shouldDisplayEditor, setShouldDisplayEditor] = useRecoilState(
+    shouldDisplayEditorState
+  );
 
   //@note this is a hack to get the parser to load
   //@todo I should put this into something that runs on app load
@@ -46,13 +34,27 @@ export default function EditorInterface() {
   }, []);
 
   return (
-    <div className="h-screen w-screen flex">
-      <div className="h-full w-1/2 flex justify-center">
+    <div
+      className="h-screen w-screen flex"
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          setShouldDisplayEditor(false);
+        }
+      }}
+    >
+      <div
+        className="h-full w-1/2 flex justify-center"
+        onClick={() => setShouldDisplayEditor(false)}
+      >
         <TextEditor />
       </div>
-      <div className="h-full w-1/2 flex justify-center">
+      <div
+        className="h-full w-1/2 flex justify-center"
+        onClick={() => setShouldDisplayEditor(false)}
+      >
         <GraphEditor />
       </div>
+      {shouldDisplayEditor && <FloatingTextEditor />}
     </div>
   );
 }

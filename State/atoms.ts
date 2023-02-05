@@ -3,7 +3,7 @@ import { FunctionNode } from "@/Components/Nodes/FunctionNode";
 import { LocalVariableNode } from "@/Components/Nodes/LocalVariableNode";
 import { StateVariableNode } from "@/Components/Nodes/StateVariableNode";
 import { INode } from "@/Helpers/helpers";
-import { atom } from "recoil";
+import { atom, atomFamily } from "recoil";
 import { Edge } from "reactflow";
 import Parser from "web-tree-sitter";
 
@@ -15,6 +15,19 @@ export const nodeState = atom<INode[]>({
 export const edgeState = atom<Edge[]>({
   key: 'edgeState',
   default: [],
+});
+
+//@note - this is a map of node id to node data
+// this makes our lives easier when we want to update a node or fetch it's data
+//@param - key: node id
+export const nodeDataState = atomFamily<any, string>({
+  key: 'nodeData',
+  default: {},
+});
+
+export const editingNodeIdState = atom<string>({
+  key: 'editingNodeId',
+  default: '',
 });
 
 export const nodeTypesState = atom({
@@ -64,4 +77,9 @@ contract Test {
 contract Test2 {
   uint public num;
 }`,
+});
+
+export const shouldDisplayEditorState = atom({
+  key: 'shouldDisplayEditor',
+  default: false,
 });

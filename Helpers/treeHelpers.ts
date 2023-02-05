@@ -37,8 +37,7 @@ export function captureToScopeRange(captures: Parser.QueryCapture[]): ScopeRange
 
     if(isScopeName(name as CaptureName)) {
       const name = node.childForFieldName("name")?.text;
-      const body = 
-      node.childForFieldName("body")
+      const body = node.childForFieldName("body")
       ?? node.childForFieldName("contract_body")
       
       if(body === null || !name) {
@@ -107,25 +106,27 @@ export function goodiesToINodes(goodies: Parser.QueryMatch, width: number, heigh
 
   const {captures} = goodies;
 
+
   return captures.map((capture) => {
     const id = getCaptureId(capture, scopeRanges);
     const displayLabel = getCaptureDisplayLabel(capture);
     //@note probably need a better name for this. But this is the syntax node that we want to display in the code editor
     const codeNode = isScopeName(capture.name as CaptureName) ? capture.node.childForFieldName('body') : capture.node;
+    const data = {
+      label: displayLabel,
+      code: codeNode?.text,
+      range: {
+        start: codeNode?.startIndex,
+        end: codeNode?.endIndex,
+      },
+      visibility: '',
+    }
     return {
       id,
       type: capture.name,
       position: { x: 0, y: 0 },
-      data: {
-        label: displayLabel,
-        code: codeNode?.text,
-        range: {
-          start: codeNode?.startIndex,
-          end: codeNode?.endIndex,
-        },
-        visibility: '',
-      },
       width,
+      data,
       height,
     };
     //@todo check out the depth sizing later

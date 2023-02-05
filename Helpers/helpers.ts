@@ -20,7 +20,7 @@ export interface INode {
     y: number;
   };
   type: string;
-  data: any;
+  data?: any;
   loc?: {
     start: {
       line: number;
