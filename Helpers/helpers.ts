@@ -2,6 +2,7 @@ import { ContractDefinition, FunctionDefinition } from "@solidity-parser/parser/
 import { ElkNode } from "elkjs";
 import ELK from "elkjs/lib/elk.bundled.js";
 import { Edge } from "reactflow";
+import Parser from "web-tree-sitter";
 const elk = new ELK();
 
 // These are helper functions meant to play nice with the visitor pattern
@@ -31,6 +32,7 @@ export interface INode {
       column: number;
     };
   };
+  node?: Parser.SyntaxNode;
   width?: number;
   height?: number;
 }
@@ -145,23 +147,48 @@ export function getNodeId(ranges: ScopeRange[], target: number) {
   } , ''); // reduce the array to a string for the ID
 }
 
-export async function formatNodes(nodes: INode[]): Promise<[INode[], Edge[]]> {
+export async function formatNodes(nodes: INode[], inputEdges?: any[]): Promise<[INode[], Edge[]]> {
+  // const edges = !inputEdges
+  // ? nodes
+  // .filter((node: any) => node.id.includes('-')) // filter out the contract nodes
+  // .map((node: any, index: number) => {
+  //   const split = node.id.split('-');
+  //   const parentId = split.slice(0, split.length-1).join('-');
+  //   const sources = [parentId]
+  //   const targets = [node.id]
+  //   return {
+  //     id: index.toString(),
+  //     sources,
+  //     source: sources[0], // we have to set `source` because thats what react flow uses
+  //     targets,
+  //     target: targets[0], // we have to set `target` because thats what react flow uses
+  //   };
+  // })
+  // : inputEdges;
   const edges = nodes
-  .filter((node: any) => node.id.includes('-')) // filter out the contract nodes
-  .map((node: any, index: number) => {
-    const split = node.id.split('-');
-    const parentId = split.slice(0, split.length-1).join('-');
-    const sources = [parentId]
-    const targets = [node.id]
-    return {
-      id: index.toString(),
-      sources,
-      source: sources[0], // we have to set `source` because thats what react flow uses
-      targets,
-      target: targets[0], // we have to set `target` because thats what react flow uses
-    };
+  .flatMap((node) => {
+    const { node: syntaxNode } = node;
+    if(!syntaxNode) return;
+    const parent = syntaxNode.parent;
+    if(parent) {
+      const sources = [parent.id.toString()];
+      const targets = [node.id.toString()]
+      return {
+        id: `${parent.id}-${node.id}`,
+        sources,
+        source: sources[0],
+        targets,
+        target: targets[0], // we have to set `target` because thats what react flow uses
+      }
+    } else {
+      return [];
+    }
   })
 
+
+  if(!edges) {
+    throw new Error("No edges");
+  }
   const graph: ElkNode = {
     id: "root",
     children: nodes,
@@ -175,7 +202,6 @@ export async function formatNodes(nodes: INode[]): Promise<[INode[], Edge[]]> {
      'elk.algorithm': DEFAULT_GRAPH_TYPE,
     },
   });
-
 
   const nodesWithPosition = layout.children?.map((node: any) => {
     const { x, y } = node;

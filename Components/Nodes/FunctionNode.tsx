@@ -1,9 +1,6 @@
 import {
   editingNodeIdState,
-  inputCodeState,
   nodeDataState,
-  nodeState,
-  parserState,
   shouldDisplayEditorState,
 } from "@/State/atoms";
 import { use, useEffect } from "react";

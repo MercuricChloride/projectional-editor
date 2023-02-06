@@ -7,6 +7,11 @@ import { atom, atomFamily } from "recoil";
 import { Edge } from "reactflow";
 import Parser from "web-tree-sitter";
 
+export const fullScreenState = atom({
+  key: 'fullScreenState',
+  default: false,
+});
+
 export const nodeState = atom<INode[]>({
   key: 'nodeState',
   default: [],
@@ -73,9 +78,6 @@ contract Test {
   function shouldHaveLocal() public {
     uint local;
   }
-}
-contract Test2 {
-  uint public num;
 }`,
 });
 

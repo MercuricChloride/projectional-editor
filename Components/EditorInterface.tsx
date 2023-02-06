@@ -1,6 +1,10 @@
 import { useEffect } from "react";
 import Parser from "web-tree-sitter";
-import { parserState, shouldDisplayEditorState } from "@/State/atoms";
+import {
+  fullScreenState,
+  parserState,
+  shouldDisplayEditorState,
+} from "@/State/atoms";
 import { useRecoilState } from "recoil";
 import { TextEditor } from "./TextEditor";
 import { GraphEditor } from "@/Components/GraphEditor";
@@ -11,6 +15,12 @@ export default function EditorInterface() {
   const [shouldDisplayEditor, setShouldDisplayEditor] = useRecoilState(
     shouldDisplayEditorState
   );
+
+  const fullScreen = useRecoilState(fullScreenState);
+
+  const split = "h-full w-1/2 flex justify-center";
+
+  const full = "h-full w-full flex justify-center";
 
   //@note this is a hack to get the parser to load
   //@todo I should put this into something that runs on app load
@@ -43,7 +53,7 @@ export default function EditorInterface() {
       }}
     >
       <div
-        className="h-full w-1/2 flex justify-center"
+        className={"h-full w-1/2 flex justify-center"}
         onClick={() => setShouldDisplayEditor(false)}
       >
         <TextEditor />

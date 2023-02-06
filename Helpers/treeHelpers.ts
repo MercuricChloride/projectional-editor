@@ -1,6 +1,11 @@
-import { nodeModuleNameResolver } from "typescript";
 import Parser, { Query } from "web-tree-sitter";
 import { INode, ScopeRange } from "./helpers";
+import Elk, { ElkNode } from "elkjs/lib/elk.bundled.js";
+const elk = new Elk();
+
+export const DEFAULT_NODE_WIDTH = 150;
+export const DEFAULT_NODE_HEIGHT = 150;
+export const DEFAULT_GRAPH_TYPE = "mrtree";
 
 // This is a query to grab all of the relevant scopes of the contract.
 export function contractGoodies(language: Parser.Language): Query {
@@ -102,7 +107,7 @@ function getCaptureId(capture: Parser.QueryCapture, scopeRanges: ScopeRange[] ) 
 // and return an array of INodes
 // This should be 
 // @note I want to make this function return a flat data type so that it is more flexible
-export function goodiesToINodes(goodies: Parser.QueryMatch, width: number, height: number, scopeRanges: ScopeRange[], sourceCode: string): INode[] {
+export function goodiesToINodes(goodies: Parser.QueryMatch, width: number, height: number, scopeRanges: ScopeRange[]): INode[] {
 
   const {captures} = goodies;
 
@@ -135,4 +140,96 @@ export function goodiesToINodes(goodies: Parser.QueryMatch, width: number, heigh
       // width: width / depth,
       // height: height / depth,
   })
+}
+
+export function simpleDisplay(node: Parser.SyntaxNode, depth: number = 0): INode[] {
+  const nodes = [];
+
+  const id = node.id.toString();
+  const data = {
+    label: node.text,
+    code: node.text,
+    range: {
+      start: node.startIndex,
+      end: node.endIndex,
+    },
+    visibility: '',
+  }
+  nodes.push({
+    id,
+    type: node.type,
+    position: { x: 0, y: 0 },
+    width: 100,
+    data,
+    height: 100,
+    node,
+    depth
+  });
+
+  node.namedChildren.forEach((child) => {
+    nodes.push(...simpleDisplay(child, depth + 1));
+  })
+
+  nodes.sort((a, b) => a.depth - b.depth);
+
+  return nodes;
+}
+
+interface IEdge {
+  id: string;
+  source: string;
+  target: string;
+  sources: string[];
+  targets: string[];
+}
+
+export function simpleEdges(nodes: INode[]): IEdge[] {
+  const edges: any[] = [];
+  
+  nodes.forEach((node) => {
+    const { node: syntaxNode } = node;
+    if(!syntaxNode) return;
+    const parent = syntaxNode.parent;
+    if(parent) {
+      const sources = [parent.id.toString()];
+      const targets = [node.id.toString()]
+      edges.push({
+        id: `${parent.id}-${node.id}`,
+        sources,
+        source: sources[0],
+        targets,
+        target: targets[0], // we have to set `target` because thats what react flow uses
+      })
+    }
+  })
+
+  return edges;
+}
+
+export async function formatNodes(nodes: INode[]) {
+  const edges = simpleEdges(nodes);
+  const graph: ElkNode = {
+    id: 'root',
+    children: nodes,
+    edges,
+    width: 10000,
+    height: 10000,
+  }
+
+  const layout = await elk.layout(graph, {
+    layoutOptions: {
+     'elk.algorithm': DEFAULT_GRAPH_TYPE,
+    },
+  });
+
+  const nodesWithPosition = layout.children?.map((node: any) => {
+    const { x, y } = node;
+    const newNode = {
+      ...node,
+      position: { x, y },
+    }
+    return newNode;
+  }) || [];
+
+  return [nodesWithPosition.slice(4), edges];
 }

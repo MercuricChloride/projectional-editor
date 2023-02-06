@@ -55,7 +55,6 @@ export const displayNodesSelector = selector<[INode[], Edge[]]>({
         DEFAULT_NODE_HEIGHT,
         DEFAULT_NODE_WIDTH,
         scopeRange,
-        code
       );
     });
 
