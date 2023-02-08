@@ -1,11 +1,7 @@
 import Parser, { Query } from "web-tree-sitter";
-import { INode, ScopeRange } from "./types";
+import { DEFAULT_GRAPH_TYPE, INode, ScopeRange } from "./types";
 import Elk, { ElkNode } from "elkjs/lib/elk.bundled.js";
 const elk = new Elk();
-
-export const DEFAULT_NODE_WIDTH = 150;
-export const DEFAULT_NODE_HEIGHT = 150;
-export const DEFAULT_GRAPH_TYPE = "mrtree";
 
 // This is a query to grab all of the relevant scopes of the contract.
 export function contractGoodies(language: Parser.Language): Query {

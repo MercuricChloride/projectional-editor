@@ -3,7 +3,7 @@ import { capturesToScopeRange, contractGoodies, capturesToNodes } from '@/Helper
 import { DEFAULT_NODE_HEIGHT, DEFAULT_NODE_WIDTH, INode } from '@/Helpers/types';
 import { Edge } from 'reactflow';
 import { selector } from 'recoil';
-import { detailLevelState, edgeState, inputCodeState, nodeState, nodeTypesToRemoveState, parserState } from './atoms';
+import { detailLevelState, inputCodeState, nodeTypesToRemoveState, parserState } from './atoms';
 
 export const parsedTreeSelector = selector({
   key: 'parsedTree',
@@ -54,12 +54,10 @@ export const displayNodesSelector = selector<[INode[], Edge[]]>({
       );
     });
 
-    return await formatNodes(
-      rawNodes.filter(
-        (node) =>
+    const filteredNodes = rawNodes.filter((node) =>
           node.id.split("-").length <= detailLevel &&
-          !nodeTypesToRemove.includes(node.type)
-      )
-    );
+          !nodeTypesToRemove.includes(node.type));
+
+    return await formatNodes(filteredNodes);
   }
 });
