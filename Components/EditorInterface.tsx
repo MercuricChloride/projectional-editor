@@ -16,12 +16,6 @@ export default function EditorInterface() {
     shouldDisplayEditorState
   );
 
-  const fullScreen = useRecoilState(fullScreenState);
-
-  const split = "h-full w-1/2 flex justify-center";
-
-  const full = "h-full w-full flex justify-center";
-
   //@note this is a hack to get the parser to load
   //@todo I should put this into something that runs on app load
   const init = async () => {

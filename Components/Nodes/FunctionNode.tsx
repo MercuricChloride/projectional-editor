@@ -3,12 +3,12 @@ import {
   nodeDataState,
   shouldDisplayEditorState,
 } from "@/State/atoms";
-import { use, useEffect } from "react";
+import { useEffect } from "react";
 import { Handle, Position } from "reactflow";
 import { useRecoilState } from "recoil";
 
 export function FunctionNode({ data, id }: any) {
-  const [, setShouldDisplayEditor] = useRecoilState(shouldDisplayEditorState);
+  const [, setDisplayEditor] = useRecoilState(shouldDisplayEditorState);
 
   const [, setEditingNodeId] = useRecoilState(editingNodeIdState);
 
@@ -23,7 +23,7 @@ export function FunctionNode({ data, id }: any) {
       className="rounded-full bg-green-500 p-6 z-0"
       onDoubleClick={() => {
         setEditingNodeId(id);
-        setShouldDisplayEditor(true);
+        setDisplayEditor(true);
       }}
     >
       <Handle

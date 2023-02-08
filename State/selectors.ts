@@ -1,5 +1,6 @@
-import { DEFAULT_NODE_HEIGHT, DEFAULT_NODE_WIDTH, formatNodes, INode } from '@/Helpers/helpers';
-import { captureToScopeRange, contractGoodies, goodiesToINodes } from '@/Helpers/treeHelpers';
+import { formatNodes } from '@/Helpers/elkHelpers';
+import { capturesToScopeRange, contractGoodies, capturesToNodes } from '@/Helpers/treeHelpers';
+import { DEFAULT_NODE_HEIGHT, DEFAULT_NODE_WIDTH, INode } from '@/Helpers/types';
 import { Edge } from 'reactflow';
 import { selector } from 'recoil';
 import { detailLevelState, edgeState, inputCodeState, nodeState, nodeTypesToRemoveState, parserState } from './atoms';
@@ -21,37 +22,32 @@ export const displayNodesSelector = selector<[INode[], Edge[]]>({
   key: 'displayNodes',
   get: async ({ get }) => {
     const nodeTypesToRemove = get(nodeTypesToRemoveState);
-    const oldNodes = get(nodeState);
-    const oldEdges = get(edgeState);
     const detailLevel = get(detailLevelState);
     const parsedTree = get(parsedTreeSelector);
-    const code = get(inputCodeState);
     if(!parsedTree) return [[], []];
 
     if(parsedTree.rootNode.hasError()) {
       console.log("Syntax Error")
-      return [oldNodes, oldEdges]
+      return [[], []];
     }
-
 
     const language = parsedTree.getLanguage();
 
-    //@todo refactor and change the name of this to something more descriptive
     // these are all of the contract matches
-    const goodies = contractGoodies(language).matches(parsedTree.rootNode);
+    const matches = contractGoodies(language).matches(parsedTree.rootNode);
 
     // get the scope range for each match that has a scope
-    const scopeRange = goodies.flatMap((goodie) => {
-      return captureToScopeRange(goodie.captures);
-    });
+    const scopeRange = matches.flatMap(({captures}) => {
+      return capturesToScopeRange(captures);
+    })
 
     // sort by start position
     scopeRange.sort((a, b) => a.start - b.end);
 
     // map over the matches and create INode objects for each
-    const rawNodes = goodies.flatMap((goodie) => {
-      return goodiesToINodes(
-        goodie,
+    const rawNodes = matches.flatMap(({captures}) => {
+      return capturesToNodes(
+        captures,
         DEFAULT_NODE_HEIGHT,
         DEFAULT_NODE_WIDTH,
         scopeRange,

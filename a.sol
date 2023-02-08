@@ -1,12 +1,26 @@
-contract Foo {
-  uint public test;
+contract Test {
+  uint public num;
+  
+  uint public num2;
+  
+  string private secretStr;
 
-  struct Bar {
-    uint test;
+  struct Book {
+    uint id;
   }
 
-  function setTest(uint num) public {
-    test = num;
+  mapping(uint => Book) public books;
+  
+  constructor() {
+
   }
 
+
+  function test() public {
+    num = 69;
+  }
+
+  function shouldHaveLocal() public pure returns(uint local) {
+    local = 4;
+  }
 }

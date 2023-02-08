@@ -2,10 +2,10 @@ import { ContractNode } from "@/Components/Nodes/ContractNode";
 import { FunctionNode } from "@/Components/Nodes/FunctionNode";
 import { LocalVariableNode } from "@/Components/Nodes/LocalVariableNode";
 import { StateVariableNode } from "@/Components/Nodes/StateVariableNode";
-import { INode } from "@/Helpers/helpers";
 import { atom, atomFamily } from "recoil";
 import { Edge } from "reactflow";
 import Parser from "web-tree-sitter";
+import { INode } from "@/Helpers/types";
 
 export const fullScreenState = atom({
   key: 'fullScreenState',

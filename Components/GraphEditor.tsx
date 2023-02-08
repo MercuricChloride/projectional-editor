@@ -1,7 +1,7 @@
 import { formatNodes, simpleDisplay, simpleEdges } from "@/Helpers/treeHelpers";
 import { edgeState, nodeState, nodeTypesState } from "@/State/atoms";
 import { displayNodesSelector, parsedTreeSelector } from "@/State/selectors";
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import ReactFlow, {
   MiniMap,
   Controls,
@@ -23,11 +23,12 @@ export function GraphEditor() {
   const [nodes, edges] = display.state === "hasValue" ? display.contents : [];
 
   if (display.state === "hasError") {
-    console.error(display.contents);
+    console.error(display);
   }
 
   const [, setNodes] = useRecoilState(nodeState);
   const [, setEdges] = useRecoilState(edgeState);
+
   const nodeTypes = useRecoilValue(nodeTypesState);
 
   const onNodesChange = useCallback(
@@ -48,34 +49,10 @@ export function GraphEditor() {
     [setEdges]
   );
 
-  const parsedTree = useRecoilValue(parsedTreeSelector);
-
-  const [simpleNodes, setSimpleNodes] = useState<any[]>([]);
-  const [simpleEdge, setSimpleEdge] = useState<any[]>([]);
-
-  async function updateNodes() {
-    const typesToDisplay = ["contract_declaration", "function_definition"];
-    if (parsedTree?.rootNode) {
-      const nodes = simpleDisplay(parsedTree?.rootNode);
-      const edges = simpleEdges(nodes);
-      const [nodesToDisplay, edgesToDisplay] = await formatNodes(nodes);
-      setSimpleNodes(nodesToDisplay);
-      setSimpleEdge(edgesToDisplay);
-      console.log("simpleDisplay result: ", nodes);
-      console.log("simpleEdges result: ", edges);
-    }
-  }
-
-  useEffect(() => {
-    updateNodes();
-  }, [parsedTree]);
-
   return (
     <ReactFlow
-      // nodes={nodes}
-      // edges={edges}
-      nodes={simpleNodes}
-      edges={simpleEdge}
+      nodes={nodes}
+      edges={edges}
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
       nodeTypes={nodeTypes}

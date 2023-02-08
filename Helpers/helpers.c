@@ -1,5 +1,5 @@
 import { ContractDefinition, FunctionDefinition } from "@solidity-parser/parser/dist/src/ast-types";
-import { ElkNode } from "elkjs";
+import { ElkExtendedEdge, ElkNode } from "elkjs";
 import ELK from "elkjs/lib/elk.bundled.js";
 import { Edge } from "reactflow";
 import Parser from "web-tree-sitter";
@@ -184,6 +184,7 @@ export async function formatNodes(nodes: INode[], inputEdges?: any[]): Promise<[
       return [];
     }
   })
+  .filter((edge) => edge !== undefined);
 
 
   if(!edges) {
@@ -192,7 +193,7 @@ export async function formatNodes(nodes: INode[], inputEdges?: any[]): Promise<[
   const graph: ElkNode = {
     id: "root",
     children: nodes,
-    edges: edges,
+    edges: edges as ElkExtendedEdge[],
     width: 10000,
     height: 10000,
   };
@@ -212,5 +213,5 @@ export async function formatNodes(nodes: INode[], inputEdges?: any[]): Promise<[
     return newNode;
   }) || [];
   
-  return [nodesWithPosition, edges];
+  return [nodesWithPosition, edges as Edge[]];
 }

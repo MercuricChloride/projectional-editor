@@ -2,27 +2,27 @@ import {
   editingNodeIdState,
   inputCodeState,
   nodeDataState,
+  nodeState,
   shouldDisplayEditorState,
 } from "@/State/atoms";
+import { displayNodesSelector } from "@/State/selectors";
 import { useEffect, useRef, useState } from "react";
 import { useRecoilState, useRecoilValue } from "recoil";
 
 export function FloatingTextEditor() {
   const [display, setDisplay] = useRecoilState(shouldDisplayEditorState);
 
-  const editingNodeId = useRecoilValue(editingNodeIdState);
+  const [editingNodeId, setEditingNodeId] = useRecoilState(editingNodeIdState);
 
-  const [nodeData, setNodeData] = useRecoilState(nodeDataState(editingNodeId));
+  const [sourceCode, setSourceCode] = useRecoilState(inputCodeState);
 
-  const ref = useRef<HTMLTextAreaElement>(null);
+  const [nodes] = useRecoilValue(displayNodesSelector);
+
+  const nodeData = nodes.find((node) => node.id === editingNodeId)?.data;
 
   const [code, setCode] = useState(nodeData.code);
 
-  console.log(nodeData);
-  useEffect(() => {
-    console.log("updated node id");
-    console.log(nodeData);
-  }, [editingNodeId]);
+  const ref = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (display) {
@@ -30,15 +30,12 @@ export function FloatingTextEditor() {
     }
   }, [display]);
 
-  const [sourceCode, setSourceCode] = useRecoilState(inputCodeState);
-
   const updateCode = (code: string) => {
-    if (code === nodeData.code) return;
-    // split the source code into an array
-    const splitSource = sourceCode.split("");
-
     // get the start and end points for the source code snippet we are editing
     const { start, end } = nodeData.range;
+
+    // split the source code into an array
+    const splitSource = sourceCode.split("");
 
     // splice the new code into the source code
     splitSource.splice(start, end - start, code);
@@ -49,15 +46,11 @@ export function FloatingTextEditor() {
     // update the source code state
     setSourceCode(newSourceCode);
 
-    // update the node data
-    setNodeData({
-      ...nodeData,
-      code,
-      range: {
-        start,
-        end: start + code.length,
-      },
-    });
+    // reset the editing node id
+    setEditingNodeId("");
+
+    // hide the editor
+    setDisplay(false);
   };
 
   return (
@@ -73,6 +66,26 @@ export function FloatingTextEditor() {
         onBlur={() => {
           updateCode(code);
           setDisplay(false);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") {
+            updateCode(code);
+          }
+          if (e.key === "Tab") {
+            e.preventDefault();
+            const start = ref.current?.selectionStart;
+            const end = ref.current?.selectionEnd;
+            const value = ref.current?.value;
+            if (
+              start !== undefined &&
+              end !== undefined &&
+              value !== undefined &&
+              ref.current !== null
+            ) {
+              setCode(value.substring(0, start) + "\t" + value.substring(end));
+              ref.current.selectionStart = ref.current.selectionEnd = start + 1;
+            }
+          }
         }}
       />
     </div>
