@@ -55,9 +55,6 @@ function getCaptureId(capture: Parser.QueryCapture, scopeRanges: ScopeRange[] ) 
 }
 
 
-// this function should take in the goodies from the contractGoodies query
-// and return an array of INodes
-// This should be 
 // @note I want to make this function return a flat data type so that it is more flexible
 //@todo Add depth sizing?
 export function capturesToNodes(captures: Parser.QueryCapture[], width: number, height: number, scopeRanges: ScopeRange[]): INode[] {

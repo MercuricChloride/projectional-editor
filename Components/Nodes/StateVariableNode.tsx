@@ -1,15 +1,11 @@
 import { Handle, Position } from "reactflow";
+import { SyntaxNode } from "./SyntaxNode";
 
-export function StateVariableNode({ data }: any) {
+export function StateVariableNode({ data, id }: any) {
   return (
-    <div className="rounded-full bg-blue-500 p-3 z-0">
-      <Handle
-        type="target"
-        position={Position.Top}
-        style={{ background: "#555" }}
-      />
+    <SyntaxNode id={id} style="rounded-full bg-blue-500 p-3">
       <div className="text-center">{data.visibility} State Variable:</div>
       <div className="text-center">{data.label}</div>
-    </div>
+    </SyntaxNode>
   );
 }
