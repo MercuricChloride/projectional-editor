@@ -1,3 +1,31 @@
+# Projectional Editor without a name
+
+### TLDR:
+
+- Our brains are better at processing pictures than text, this is why we use diagrams to explain stuff not text.
+
+- We should use this to our advantage to quickly grokk what code is doing.
+
+- We should be able to edit that visual representation of code, but shouldn't be forced to write it visually. I like typing and would never use a my mouse to write my code if I have a keyboard. This also benefits n00bs who don't like typing because they are new and a visual interface is much less scary than a blank editor.
+
+- Because we are working on an abstract representation of our code, we can create powerful macros, ones that operate on the AST of the language, which is something that isn't possible in most langauges other than Lisp(s). This enables us to build visual domain specific languages within our codebase to simplify how things work even more.
+
+- The code should be able to be written exclusively using the visual editor, but it shouldn't be forced upon a user. This is powered by the macro system.
+
+---
+
+This is a projectional editor. What does that mean? You operate on an abstract visual representation of your source code. (IE your source code is projecting onto the visual canvas)
+
+The changes you make to this projection, are also mirrored in your source. This is a cool abstraction because it allows us to "grokk" what code is doing due to how advanced the visual processing part of our brain is compared to the text processing part of the brain.
+
+This project is a prototype and is intentionally scoped.
+
+I am going to be building it with the focus of writing and analyzing solidity code first. Though adding other languages is pretty straight forward because of the tools we are using.
+
+Reach out to me if you have any questions or features! Cheers.
+
+---
+
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
 ## Getting Started
