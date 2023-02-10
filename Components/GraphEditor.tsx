@@ -1,51 +1,50 @@
-import { formatNodes, simpleDisplay, simpleEdges } from "@/Helpers/treeHelpers";
-import { edgeState, nodeState, nodeTypesState } from "@/State/atoms";
-import { displayNodesSelector, parsedTreeSelector } from "@/State/selectors";
-import { useCallback, useState } from "react";
+import { INode } from "@/Helpers/types";
+import { nodeTypesState } from "@/State/atoms";
+import { displayNodesSelector } from "@/State/selectors";
+import { useCallback, useEffect } from "react";
 import ReactFlow, {
   MiniMap,
   Controls,
   Background,
-  NodeChange,
-  applyNodeChanges,
-  applyEdgeChanges,
-  EdgeChange,
   addEdge,
+  Edge,
+  useEdgesState,
+  useNodesState,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import { useRecoilState, useRecoilValue, useRecoilValueLoadable } from "recoil";
+import { useRecoilValue, useRecoilValueLoadable } from "recoil";
 
 export function GraphEditor() {
   //@note I am using a seperate selector here because I want to filter out nodes when we display, and don't want to filter the nodes in the state object
   //@note this returns Loadable<[nodes, edges]>
   const display = useRecoilValueLoadable(displayNodesSelector);
 
-  const [nodes, edges] = display.state === "hasValue" ? display.contents : [];
+  const [displayNodes, displayEdges] =
+    display.state === "hasValue" ? display.contents : [];
+
+  //@note I am using local state here because I want to be able to interact with the nodes and edges so long as nobody is making changes to the source code
+  const [nodes, setNodes, onNodesChange] = useNodesState(
+    displayNodes as INode[]
+  );
+  const [edges, setEdges, onEdgesChange] = useEdgesState(
+    displayEdges as Edge[]
+  );
 
   if (display.state === "hasError") {
     console.error(display);
   }
 
-  const [, setNodes] = useRecoilState(nodeState);
-  const [, setEdges] = useRecoilState(edgeState);
+  useEffect(() => {
+    if (display.state === "hasValue" && displayNodes && displayEdges) {
+      setNodes(displayNodes);
+      setEdges(displayEdges);
+    }
+  }, [display]);
 
   const nodeTypes = useRecoilValue(nodeTypesState);
 
-  const onNodesChange = useCallback(
-    (changes: NodeChange[]) =>
-      // @ts-ignore
-      setNodes((nds) => applyNodeChanges(changes, nds)),
-    [setNodes]
-  );
-
-  const onEdgesChange = useCallback(
-    (changes: EdgeChange[]) =>
-      setEdges((eds) => applyEdgeChanges(changes, eds)),
-    [setEdges]
-  );
-
   const onConnect = useCallback(
-    (params: any) => setEdges((eds) => addEdge(params, eds)),
+    (params: any) => setEdges((eds) => addEdge(params, eds as Edge[])),
     [setEdges]
   );
 
@@ -57,10 +56,6 @@ export function GraphEditor() {
       onEdgesChange={onEdgesChange}
       nodeTypes={nodeTypes}
       onConnect={onConnect}
-      onContextMenu={(event) => {
-        event.preventDefault();
-        console.log("context menu", event);
-      }}
     >
       <MiniMap />
       <Controls />

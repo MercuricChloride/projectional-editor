@@ -10,6 +10,7 @@ export function contractGoodies(language: Parser.Language): Query {
     (function_definition) @function
     (state_variable_declaration) @stateVariable
     (variable_declaration) @localVariable
+    (function_body) @functionBody
   `);
 }
 
@@ -74,6 +75,8 @@ export function capturesToNodes(captures: Parser.QueryCapture[], width: number, 
         start: startIndex,
         end: endIndex
       },
+      node,
+      hasError: node.hasError(),
       visibility
     }
     return {
@@ -81,100 +84,8 @@ export function capturesToNodes(captures: Parser.QueryCapture[], width: number, 
       type: capture.name,
       position: { x: 0, y: 0 },
       width,
-      data,
       height,
+      data,
     };
   })
-}
-
-export function simpleDisplay(node: Parser.SyntaxNode, depth: number = 0): INode[] {
-  const nodes = [];
-
-  const id = node.id.toString();
-  const data = {
-    label: node.text,
-    code: node.text,
-    range: {
-      start: node.startIndex,
-      end: node.endIndex,
-    },
-    visibility: '',
-  }
-  nodes.push({
-    id,
-    type: node.type,
-    position: { x: 0, y: 0 },
-    width: 100,
-    data,
-    height: 100,
-    node,
-    depth
-  });
-
-  node.namedChildren.forEach((child) => {
-    nodes.push(...simpleDisplay(child, depth + 1));
-  })
-
-  nodes.sort((a, b) => a.depth - b.depth);
-
-  return nodes;
-}
-
-interface IEdge {
-  id: string;
-  source: string;
-  target: string;
-  sources: string[];
-  targets: string[];
-}
-
-export function simpleEdges(nodes: INode[]): IEdge[] {
-  const edges: any[] = [];
-  
-  nodes.forEach((node) => {
-    const { node: syntaxNode } = node;
-    if(!syntaxNode) return;
-    const parent = syntaxNode.parent;
-    if(parent) {
-      const sources = [parent.id.toString()];
-      const targets = [node.id.toString()]
-      edges.push({
-        id: `${parent.id}-${node.id}`,
-        sources,
-        source: sources[0],
-        targets,
-        target: targets[0], // we have to set `target` because thats what react flow uses
-      })
-    }
-  })
-
-  return edges;
-}
-
-export async function formatNodes(nodes: INode[]) {
-  const edges = simpleEdges(nodes);
-  const graph: ElkNode = {
-    id: 'root',
-    children: nodes,
-    edges,
-    width: 10000,
-    height: 10000,
-  }
-
-  const layout = await elk.layout(graph, {
-    layoutOptions: {
-     'elk.algorithm': DEFAULT_GRAPH_TYPE,
-    },
-  });
-
-  const nodesWithPosition = layout.children?.map((node: any) => {
-    const { x, y } = node;
-    const newNode = {
-      ...node,
-      position: { x, y },
-    }
-    return newNode;
-  }) || [];
-
-  return [nodesWithPosition.slice(4), edges];
 }

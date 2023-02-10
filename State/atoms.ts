@@ -85,3 +85,9 @@ export const shouldDisplayEditorState = atom({
   key: 'shouldDisplayEditor',
   default: false,
 });
+
+
+export const addNodeDropdownState = atom({
+  key: 'addNodeDropdown',
+  default: false,
+});

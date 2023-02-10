@@ -13,6 +13,7 @@ export const parsedTreeSelector = selector({
     if(!parser) return undefined;
 
     const tree = parser.parse(code);
+    console.log(tree.rootNode.toString())
 
     return tree;
   }
@@ -25,11 +26,6 @@ export const displayNodesSelector = selector<[INode[], Edge[]]>({
     const detailLevel = get(detailLevelState);
     const parsedTree = get(parsedTreeSelector);
     if(!parsedTree) return [[], []];
-
-    if(parsedTree.rootNode.hasError()) {
-      console.log("Syntax Error")
-      return [[], []];
-    }
 
     const language = parsedTree.getLanguage();
 
