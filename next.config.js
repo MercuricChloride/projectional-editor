@@ -12,6 +12,12 @@ const nextConfig = {
         minimize: false,
         minimizer: [],
       },
+      resolve: {
+        ...config.resolve,
+        fallback: {
+          fs: false
+        }
+      },
       // plugins: [
       //   new webpack.DefinePlugin({
       //     BROWSER: true,
