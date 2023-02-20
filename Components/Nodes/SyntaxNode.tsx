@@ -1,10 +1,7 @@
-import {
-  addNodeDropdownState,
-  editingNodeIdState,
-  nodeDataState,
-  shouldDisplayEditorState,
-} from "@/State/atoms";
-import { useEffect, useRef, useState } from "react";
+import { useUpdateCode } from "@/Helpers/Hooks/useUpdateCode";
+import { typeToSnippet } from "@/Helpers/snippets";
+import { editingNodeIdState, shouldDisplayEditorState } from "@/State/atoms";
+import { useState } from "react";
 import { Handle, Position } from "reactflow";
 import { useRecoilState } from "recoil";
 
@@ -29,6 +26,8 @@ export function SyntaxNode({
 
   const [nodeDropdown, setNodeDropdown] = useState(false);
 
+  const updateCode = useUpdateCode(id);
+
   const { hasError } = data;
 
   return (
@@ -40,7 +39,9 @@ export function SyntaxNode({
       }}
       onContextMenu={(e) => {
         e.preventDefault();
-        setNodeDropdown(true);
+        if (subTypes.length > 0) {
+          setNodeDropdown(true);
+        }
       }}
       onMouseLeave={() => {
         setNodeDropdown(false);
@@ -55,11 +56,13 @@ export function SyntaxNode({
         <div className="text-center text-red-500">Error: {hasError}</div>
       )}
       {children}
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        style={{ background: "#555" }}
-      />
+      {subTypes.length > 0 && (
+        <Handle
+          type="source"
+          position={Position.Bottom}
+          style={{ background: "#555" }}
+        />
+      )}
       {nodeDropdown && (
         <div className="absolute z-10 bg-white border border-gray-300 rounded-md shadow-md min-w-36">
           Add a node:
@@ -68,7 +71,11 @@ export function SyntaxNode({
               key={subType}
               className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
               onClick={() => {
-                console.log("Should add a node of type: ", subType);
+                // set the snippet to whatever the user clicked
+                const snippet = typeToSnippet(subType);
+                // if the snippet exists, update the code
+                if (snippet) updateCode(snippet());
+                // hide the dropdown
                 setNodeDropdown(false);
               }}
             >
