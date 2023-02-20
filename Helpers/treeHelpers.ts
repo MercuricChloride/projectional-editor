@@ -10,7 +10,7 @@ export function contractGoodies(language: Parser.Language): Query {
     (function_definition) @function
     (state_variable_declaration) @stateVariable
     (variable_declaration) @localVariable
-    (function_body) @functionBody
+    ;(function_body) @functionBody
   `);
 }
 

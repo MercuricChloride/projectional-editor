@@ -13,7 +13,7 @@ export const parsedTreeSelector = selector({
     if(!parser) return undefined;
 
     const tree = parser.parse(code);
-    console.log(tree.rootNode.toString())
+    console.log(tree.rootNode.toString());
 
     return tree;
   }
