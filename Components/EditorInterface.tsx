@@ -11,7 +11,7 @@ import { GraphEditor } from "@/Components/GraphEditor";
 import { FloatingTextEditor } from "./FloatingTextEditor";
 
 export default function EditorInterface() {
-  const [, setParser] = useRecoilState(parserState);
+  const [parser, setParser] = useRecoilState(parserState);
   const [shouldDisplayEditor, setShouldDisplayEditor] = useRecoilState(
     shouldDisplayEditorState
   );
@@ -39,26 +39,32 @@ export default function EditorInterface() {
 
   return (
     <div
-      className="h-screen w-screen flex"
+      className="h-screen w-screen flex flex-col"
       onKeyDown={(e) => {
         if (e.key === "Escape") {
           setShouldDisplayEditor(false);
         }
+        console.log("parser", parser);
       }}
     >
-      <div
-        className={"h-full w-1/2 flex justify-center"}
-        onClick={() => setShouldDisplayEditor(false)}
-      >
-        <TextEditor />
+      <div className="flex w-full h-16 justify-center text-center">
+        <h1 className="text-4xl font-bold">Beemr.xyz</h1>
       </div>
-      <div
-        className="h-full w-1/2 flex justify-center"
-        onClick={() => setShouldDisplayEditor(false)}
-      >
-        <GraphEditor />
+      <div className="flex flex-row w-full h-full">
+        <div
+          className={"h-full w-1/2 flex justify-center"}
+          onClick={() => setShouldDisplayEditor(false)}
+        >
+          <TextEditor />
+        </div>
+        <div
+          className="h-full w-1/2 flex justify-center"
+          onClick={() => setShouldDisplayEditor(false)}
+        >
+          <GraphEditor />
+        </div>
+        {shouldDisplayEditor && <FloatingTextEditor />}
       </div>
-      {shouldDisplayEditor && <FloatingTextEditor />}
     </div>
   );
 }

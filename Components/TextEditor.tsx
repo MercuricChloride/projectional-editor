@@ -26,9 +26,6 @@ export function TextEditor() {
         setInputCode(code);
       }}
     >
-      <div className="flex bg-slate-200 border-black border-2 justify-around">
-        <ChangeDetailButton />
-      </div>
       <AceEditor
         value={code}
         tabSize={2}
