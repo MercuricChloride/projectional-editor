@@ -37,7 +37,7 @@ export default function EditorInterface() {
 
   useEffect(() => {
     init();
-  }, [init]);
+  }, []);
 
   return (
     <div
