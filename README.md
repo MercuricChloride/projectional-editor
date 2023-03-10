@@ -16,7 +16,7 @@
 
 This is a projectional editor. What does that mean? You operate on an abstract visual representation of your source code. (IE your source code is projecting onto the visual canvas)
 
-The changes you make to this projection, are also mirrored in your source. This is a cool abstraction because it allows us to "grokk" what code is doing due to how advanced the visual processing part of our brain is compared to the text processing part of the brain.
+The changes you make to this projection, are also mirrored in your source. This is a cool abstraction because it allows us to "grokk" what code is doing due to how advanced the visual processing part of our brain is, compared to the text processing part of the brain.
 
 This project is a prototype and is intentionally scoped.
 

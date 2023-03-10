@@ -27,6 +27,7 @@ export default function EditorInterface() {
     const Solidity = await Parser.Language.load("tree-sitter-solidity.wasm");
 
     const parser = new Parser();
+    console.log("parser", parser);
 
     parser.setLanguage(Solidity);
 
@@ -39,26 +40,31 @@ export default function EditorInterface() {
 
   return (
     <div
-      className="h-screen w-screen flex"
+      className="h-screen w-screen flex flex-col"
       onKeyDown={(e) => {
         if (e.key === "Escape") {
           setShouldDisplayEditor(false);
         }
       }}
     >
-      <div
-        className={"h-full w-1/2 flex justify-center"}
-        onClick={() => setShouldDisplayEditor(false)}
-      >
-        <TextEditor />
+      <div className="flex w-full h-16 justify-center text-center">
+        <h1 className="text-4xl font-bold">Beemr.xyz</h1>
       </div>
-      <div
-        className="h-full w-1/2 flex justify-center"
-        onClick={() => setShouldDisplayEditor(false)}
-      >
-        <GraphEditor />
+      <div className="flex flex-row w-full h-full">
+        <div
+          className={"h-full w-1/2 flex justify-center"}
+          onClick={() => setShouldDisplayEditor(false)}
+        >
+          <TextEditor />
+        </div>
+        <div
+          className="h-full w-1/2 flex justify-center"
+          onClick={() => setShouldDisplayEditor(false)}
+        >
+          <GraphEditor />
+        </div>
+        {shouldDisplayEditor && <FloatingTextEditor />}
       </div>
-      {shouldDisplayEditor && <FloatingTextEditor />}
     </div>
   );
 }

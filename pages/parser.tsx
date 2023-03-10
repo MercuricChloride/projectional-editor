@@ -18,6 +18,7 @@ export default function ParserPage(props: any) {
     const Solidity = await Parser.Language.load("tree-sitter-solidity.wasm");
 
     const parser = new Parser();
+    console.log("parser: ", parser);
     parser.setLanguage(Solidity);
     setParser(parser);
   };
