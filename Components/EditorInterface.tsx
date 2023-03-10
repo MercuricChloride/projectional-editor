@@ -11,7 +11,7 @@ import { GraphEditor } from "@/Components/GraphEditor";
 import { FloatingTextEditor } from "./FloatingTextEditor";
 
 export default function EditorInterface() {
-  const [, setParser] = useRecoilState(parserState);
+  const [parser, setParser] = useRecoilState(parserState);
   const [shouldDisplayEditor, setShouldDisplayEditor] = useRecoilState(
     shouldDisplayEditorState
   );
@@ -37,7 +37,7 @@ export default function EditorInterface() {
 
   useEffect(() => {
     init();
-  }, []);
+  }, [init]);
 
   return (
     <div
@@ -46,6 +46,7 @@ export default function EditorInterface() {
         if (e.key === "Escape") {
           setShouldDisplayEditor(false);
         }
+        console.log("parser", parser);
       }}
     >
       <div className="flex w-full h-16 justify-center text-center">
