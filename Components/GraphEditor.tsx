@@ -41,10 +41,6 @@ export function GraphEditor() {
     }
   }, [display]);
 
-  useEffect(() => {
-    console.log("nodes", nodes);
-  }, [nodes]);
-
   const nodeTypes = useRecoilValue(nodeTypesState);
 
   const onConnect = useCallback(
